@@ -11,7 +11,7 @@ import lombok.Setter;
 @Setter
 public class Step {
 
-    private String type;
+    private String actionType;
     private String targetId;
 
 }

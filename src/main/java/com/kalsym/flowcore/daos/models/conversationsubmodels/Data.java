@@ -12,5 +12,6 @@ import lombok.Setter;
 public class Data {
 
     private String currentVertexId;
+    private int currentVertexSendCount;
     private HashMap<String, String> variables;
 }

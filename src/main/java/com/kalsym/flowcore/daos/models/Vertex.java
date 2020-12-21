@@ -29,15 +29,17 @@ public class Vertex {
 
     private List<Condition> conditions;
     private List<Action> actions;
+    private List<Option> options;
 
     private Step step;
+
+    private String customVariableName;
 
     @CreatedDate
     private Date createdDate;
     @LastModifiedDate
     private Date lastModifiedDate;
 
-    @DBRef
-    private Flow flow;
+    private String flowId;
 
 }

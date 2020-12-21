@@ -30,4 +30,7 @@ public class Flow {
     private Date lastModifiedDate;
 
     private String pageId;
+
+    private String topVertexId;
+
 }

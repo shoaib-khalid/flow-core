@@ -5,6 +5,7 @@ import java.util.Date;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -17,6 +18,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document
 public class Conversation {
 
+    @Id
     private String id;
 
     private Data data;
@@ -28,6 +30,8 @@ public class Conversation {
 
     private String senderId;
     private String refrenceId;
+
+    private String latestVertexId;
 
     private String flowId;
 }

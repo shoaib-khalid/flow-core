@@ -1,4 +1,4 @@
-package com.kalsym.flowcore.services;
+package com.kalsym.flowcore.models.pushmessages;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -9,8 +9,9 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class Postback {
+public class MenuItem {
 
+    private String type;
     private String title;
     private String payload;
 }
