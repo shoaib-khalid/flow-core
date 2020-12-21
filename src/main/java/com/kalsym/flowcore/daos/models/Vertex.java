@@ -1,5 +1,6 @@
 package com.kalsym.flowcore.daos.models;
 
+import com.kalsym.flowcore.daos.models.conversationsubmodels.Data;
 import com.kalsym.flowcore.daos.models.vertexsubmodels.*;
 import java.util.Date;
 import java.util.List;
@@ -8,7 +9,6 @@ import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
@@ -41,5 +41,22 @@ public class Vertex {
     private Date lastModifiedDate;
 
     private String flowId;
+
+    public Step matchConditions(Data data) {
+        Step step = null;
+
+        for (Condition condition : conditions) {
+            step = condition.match(data);
+            if (null != step) {
+                break;
+            }
+        }
+
+        if (null == step) {
+            step = this.step;
+        }
+
+        return step;
+    }
 
 }

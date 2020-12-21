@@ -21,6 +21,9 @@ public class Conversation {
     @Id
     private String id;
 
+    /**
+     * 
+     */
     private Data data;
 
     @CreatedDate

@@ -41,7 +41,7 @@ public class VerticesHandler {
      *
      * @param conversation
      * @param vertex
-     * @param inputData Data to be processed.
+     * @param inputData Data to be processed. Can be
      * @return Next vertex.
      */
     public Vertex getNextVertex(Conversation conversation, Vertex vertex, String inputData) {
@@ -60,11 +60,24 @@ public class VerticesHandler {
         }
 
         if (VertexType.TEXT_MESSAGE == vertex.getInfo().getType()) {
-            nextVertex = getNextVertexBeText(conversation, vertex, inputData);
+            Step step = getNextVertexByText(conversation, vertex, inputData);
+            LogUtil.info(logprefix, logLocation, "nextVertex Id: " + step.getTargetId(), "");
+
+            Optional<Vertex> vertexOpt = verticesRepostiory.findById(step.getTargetId());
+            nextVertex = vertexOpt.get();
         }
 
         if (VertexType.CONDITION == vertex.getInfo().getType()) {
+            Step step = vertex.matchConditions(conversation.getData());
+            LogUtil.info(logprefix, logLocation, "nextVertex Id: " + step.getTargetId(), "");
 
+            Optional<Vertex> vertexOpt = verticesRepostiory.findById(step.getTargetId());
+            nextVertex = vertexOpt.get();
+        }
+
+        if (VertexType.ACTION == nextVertex.getInfo().getType()
+                || VertexType.CONDITION == nextVertex.getInfo().getType()) {
+            nextVertex = getNextVertex(conversation, nextVertex, inputData);
         }
 
         return nextVertex;
@@ -81,7 +94,15 @@ public class VerticesHandler {
         return vertexOpt.get();
     }
 
-    private Vertex getNextVertexBeText(Conversation conversation, Vertex vertex, String text) {
+    /**
+     * Returns the next vertex after processing text input.
+     *
+     * @param conversation
+     * @param vertex
+     * @param text
+     * @return Next vertex
+     */
+    private Step getNextVertexByText(Conversation conversation, Vertex vertex, String text) {
         Validation validation = vertex.getValidation();
 
         if (ValidationInputType.TEXT == validation.getInputType()) {
@@ -105,13 +126,19 @@ public class VerticesHandler {
                 data.setVariables(variables);
                 conversation.setData(data);
                 conversationsRepostiory.save(conversation);
-
-                Optional<Vertex> vertexOpt = verticesRepostiory.findById(vertex.getStep().getTargetId());
-                return vertexOpt.get();
+                return vertex.getStep();
             }
         }
 
-        return vertex;
+        Step step = new Step();
+        step.setTargetId(vertex.getId());
+        step.setActionType("vertex");
+
+        return step;
+    }
+
+    private Vertex getNextVertexByCondition(Conversation conversation, Vertex vertex, String text) {
+        return null;
     }
 
     /**
