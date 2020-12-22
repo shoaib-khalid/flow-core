@@ -1,5 +1,6 @@
 package com.kalsym.flowcore.daos.models.vertexsubmodels;
 
+import com.kalsym.flowcore.models.enums.VertexTargetType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,7 +12,7 @@ import lombok.Setter;
 @Setter
 public class Step {
 
-    private String actionType;
+    private VertexTargetType targetType;
     private String targetId;
 
 }

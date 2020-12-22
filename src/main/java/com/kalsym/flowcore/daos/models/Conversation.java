@@ -22,7 +22,7 @@ public class Conversation {
     private String id;
 
     /**
-     * 
+     *
      */
     private Data data;
 
@@ -34,7 +34,24 @@ public class Conversation {
     private String senderId;
     private String refrenceId;
 
-    private String latestVertexId;
-
     private String flowId;
+
+    public void shiftVertex(String vertexId) {
+
+        if (null == this.data) {
+            this.data = new Data();
+        }
+
+        data.setCurrentVertexId(vertexId);
+    }
+
+    public void shiftVertex(Vertex vertex) {
+
+        if (null == this.data) {
+            this.data = new Data();
+        }
+
+        data.setCurrentVertexId(vertex.getId());
+        this.flowId = vertex.getFlowId();
+    }
 }

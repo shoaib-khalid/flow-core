@@ -1,7 +1,6 @@
 package com.kalsym.flowcore.daos.models.vertexsubmodels;
 
 import com.kalsym.flowcore.models.enums.MatchOperator;
-import com.kalsym.flowcore.utils.LogUtil;
 import lombok.Getter;
 import lombok.Setter;
 

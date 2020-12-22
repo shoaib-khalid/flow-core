@@ -27,6 +27,10 @@ public class Vertex {
 
     private Validation validation;
 
+    /**
+     * Two variables from below will be null and only one will be assigned a
+     * value
+     */
     private List<Condition> conditions;
     private List<Action> actions;
     private List<Option> options;
@@ -42,21 +46,38 @@ public class Vertex {
 
     private String flowId;
 
+    /**
+     * Returns the step after matching the conditions inside the vertex. If non
+     * of the conditions match returns the step from vertex.
+     *
+     * @param data Data from conversation
+     * @return Step
+     */
     public Step matchConditions(Data data) {
-        Step step = null;
 
         for (Condition condition : conditions) {
-            step = condition.match(data);
-            if (null != step) {
-                break;
+            return condition.match(data);
+        }
+
+        return this.step;
+    }
+
+    /**
+     * Traverses through options and takes matching value. If non of the options
+     * match returns the step from vertex.
+     *
+     * @param targetId Id of next vertex
+     * @return Step
+     */
+    public Step matchOptions(String targetId) {
+
+        for (Option option : this.options) {
+            if (targetId.equalsIgnoreCase(option.getStep().getTargetId())) {
+                return option.getStep();
             }
         }
 
-        if (null == step) {
-            step = this.step;
-        }
-
-        return step;
+        return this.step;
     }
 
 }

@@ -4,10 +4,11 @@ import com.kalsym.flowcore.daos.models.*;
 import com.kalsym.flowcore.models.pushmessages.*;
 import com.kalsym.flowcore.daos.models.*;
 import com.kalsym.flowcore.daos.models.vertexsubmodels.*;
+import com.kalsym.flowcore.daos.models.conversationsubmodels.*;
 import com.kalsym.flowcore.daos.repositories.ConversationsRepostiory;
 import com.kalsym.flowcore.daos.repositories.VerticesRepostiory;
 import com.kalsym.flowcore.models.*;
-import com.kalsym.flowcore.utils.LogUtil;
+import com.kalsym.flowcore.utils.Logger;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,6 @@ import com.kalsym.flowcore.services.MessageSender;
 import com.kalsym.flowcore.services.VerticesHandler;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  *
@@ -70,11 +70,11 @@ public class CallbackController {
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         HttpReponse response = new HttpReponse(request.getRequestURI());
 
-        LogUtil.info(logprefix, logLocation, "queryString: " + request.getQueryString(), "");
+        Logger.info(logprefix, logLocation, "queryString: " + request.getQueryString(), "");
 
         try {
             Conversation conversation = conversationHandler.getConversation(senderId, refrenceId);
-            LogUtil.info(logprefix, logLocation, "conversationId: " + conversation.getId(), "");
+            Logger.info(logprefix, logLocation, "conversationId: " + conversation.getId(), "");
 
             Vertex nextVertex = conversationHandler.getNextVertex(conversation, requestBody.getData());
 
@@ -92,10 +92,10 @@ public class CallbackController {
                 url = requestBody.getCallbackUrl() + "callback/pushSimpleMessage";
             }
             messageSender.sendMessage(pushMessage, url);
-            conversation.setLatestVertexId(nextVertex.getId());
-            conversationHandler.shiftVertex(conversation, nextVertex);
+            conversation.shiftVertex(nextVertex);
+            conversationsRepostiory.save(conversation);
         } catch (Exception e) {
-            LogUtil.error(logprefix, logLocation, "Error processing request params", "", e);
+            Logger.error(logprefix, logLocation, "Error processing request params", "", e);
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -118,11 +118,11 @@ public class CallbackController {
         String logprefix = request.getRequestURI() + " ";
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         HttpReponse response = new HttpReponse(request.getRequestURI());
-        LogUtil.info(logprefix, logLocation, "queryString: " + request.getQueryString(), "");
+        Logger.info(logprefix, logLocation, "queryString: " + request.getQueryString(), "");
 
         try {
             Conversation conversation = conversationHandler.getConversation(senderId, refrenceId);
-            LogUtil.info(logprefix, logLocation, "conversationId: " + conversation.getId(), "");
+            Logger.info(logprefix, logLocation, "conversationId: " + conversation.getId(), "");
 
             Vertex nextVertex = conversationHandler.getNextVertex(conversation, requestBody.getData());
             String url = "";
@@ -139,10 +139,10 @@ public class CallbackController {
                 url = requestBody.getCallbackUrl() + "callback/pushSimpleMessage";
             }
             messageSender.sendMessage(pushMessage, url);
-            conversation.setLatestVertexId(nextVertex.getId());
-            conversationHandler.shiftVertex(conversation, nextVertex);
+            conversation.shiftVertex(nextVertex);
+            conversationsRepostiory.save(conversation);
         } catch (Exception e) {
-            LogUtil.error(logprefix, logLocation, "Error processing request params", "", e);
+            Logger.error(logprefix, logLocation, "Error processing request params", "", e);
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(response);

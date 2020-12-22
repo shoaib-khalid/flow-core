@@ -1,7 +1,7 @@
 package com.kalsym.flowcore.services;
 
 import com.kalsym.flowcore.models.pushmessages.*;
-import com.kalsym.flowcore.utils.LogUtil;
+import com.kalsym.flowcore.utils.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -16,11 +16,11 @@ public class MessageSender {
     public String sendMessage(PushMessage message, String url) throws Exception {
         String logprefix = "";
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
-        LogUtil.info(logprefix, logLocation, "url: " + url, "");
+        Logger.info(logprefix, logLocation, "url: " + url, "");
 
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response = restTemplate.postForEntity(url, message, String.class);
-        LogUtil.info(logprefix, logLocation, "response: " + response.getBody(), "");
+        Logger.info(logprefix, logLocation, "response: " + response.getBody(), "");
         return response.getBody();
     }
 }

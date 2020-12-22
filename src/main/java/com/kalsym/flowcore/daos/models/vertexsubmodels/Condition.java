@@ -4,7 +4,7 @@ import com.kalsym.flowcore.daos.models.conversationsubmodels.Data;
 import lombok.Getter;
 import lombok.Setter;
 import com.kalsym.flowcore.models.enums.ConditionOperator;
-import com.kalsym.flowcore.utils.LogUtil;
+import com.kalsym.flowcore.utils.Logger;
 import java.util.HashMap;
 import java.util.List;
 
@@ -32,7 +32,7 @@ public class Condition {
             String variableName = conditionGroup.getField();
             String variableValue = variables.get(variableName);
 
-            LogUtil.info(logprefix, logLocation, "operator: " + operator, "");
+            Logger.info(logprefix, logLocation, "operator: " + operator, "");
 
             if (ConditionOperator.OR == operator) {
                 if (conditionGroup.match(variableValue)) {

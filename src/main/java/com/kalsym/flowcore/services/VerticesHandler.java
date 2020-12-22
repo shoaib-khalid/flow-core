@@ -7,9 +7,8 @@ import com.kalsym.flowcore.daos.models.conversationsubmodels.*;
 import com.kalsym.flowcore.daos.repositories.ConversationsRepostiory;
 import com.kalsym.flowcore.daos.repositories.FlowsRepostiory;
 import com.kalsym.flowcore.daos.repositories.VerticesRepostiory;
-import com.kalsym.flowcore.models.enums.ValidationInputType;
-import com.kalsym.flowcore.models.enums.VertexType;
-import com.kalsym.flowcore.utils.LogUtil;
+import com.kalsym.flowcore.models.enums.*;
+import com.kalsym.flowcore.utils.Logger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,32 +47,30 @@ public class VerticesHandler {
 
         String logprefix = "";
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
-        LogUtil.info(logprefix, logLocation, "vertexType: " + vertex.getInfo().getType(), "");
+        Logger.info(logprefix, logLocation, "vertexType: " + vertex.getInfo().getType(), "");
 
         Vertex nextVertex = null;
 
+        Step step = null;
         if (VertexType.ACTION == vertex.getInfo().getType()) {
+
         }
 
         if (VertexType.MENU_MESSAGE == vertex.getInfo().getType()) {
-            nextVertex = getNextVertexByMenu(inputData);
+            step = vertex.matchOptions(inputData);
         }
 
         if (VertexType.TEXT_MESSAGE == vertex.getInfo().getType()) {
-            Step step = getNextVertexByText(conversation, vertex, inputData);
-            LogUtil.info(logprefix, logLocation, "nextVertex Id: " + step.getTargetId(), "");
-
-            Optional<Vertex> vertexOpt = verticesRepostiory.findById(step.getTargetId());
-            nextVertex = vertexOpt.get();
+            step = getStepVertexByText(conversation, vertex, inputData);
         }
 
         if (VertexType.CONDITION == vertex.getInfo().getType()) {
-            Step step = vertex.matchConditions(conversation.getData());
-            LogUtil.info(logprefix, logLocation, "nextVertex Id: " + step.getTargetId(), "");
-
-            Optional<Vertex> vertexOpt = verticesRepostiory.findById(step.getTargetId());
-            nextVertex = vertexOpt.get();
+            step = vertex.matchConditions(conversation.getData());
         }
+
+        Logger.info(logprefix, logLocation, "nextVertex Id: " + step.getTargetId(), "");
+        Optional<Vertex> vertexOpt = verticesRepostiory.findById(step.getTargetId());
+        nextVertex = vertexOpt.get();
 
         if (VertexType.ACTION == nextVertex.getInfo().getType()
                 || VertexType.CONDITION == nextVertex.getInfo().getType()) {
@@ -84,25 +81,16 @@ public class VerticesHandler {
     }
 
     /**
-     * Returns the next vertex considering that inputData is id of next vertex;
-     *
-     * @param targetId Id of next vertex
-     * @return Next Vertex.
-     */
-    private Vertex getNextVertexByMenu(String targetId) {
-        Optional<Vertex> vertexOpt = verticesRepostiory.findById(targetId);
-        return vertexOpt.get();
-    }
-
-    /**
-     * Returns the next vertex after processing text input.
+     * Returns the step after validating input. If the validation does not pass
+     * than returns the same vertex in step. Also saves data in custom variable
+     * of vertex if validation succeeds.
      *
      * @param conversation
      * @param vertex
      * @param text
-     * @return Next vertex
+     * @return Step
      */
-    private Step getNextVertexByText(Conversation conversation, Vertex vertex, String text) {
+    private Step getStepVertexByText(Conversation conversation, Vertex vertex, String text) {
         Validation validation = vertex.getValidation();
 
         if (ValidationInputType.TEXT == validation.getInputType()) {
@@ -132,13 +120,9 @@ public class VerticesHandler {
 
         Step step = new Step();
         step.setTargetId(vertex.getId());
-        step.setActionType("vertex");
+        step.setTargetType(VertexTargetType.VERTEX);
 
         return step;
-    }
-
-    private Vertex getNextVertexByCondition(Conversation conversation, Vertex vertex, String text) {
-        return null;
     }
 
     /**
@@ -153,7 +137,7 @@ public class VerticesHandler {
     public PushMessage getPushMessage(Vertex vertex, List<String> recipients, String refId) {
         String logprefix = "";
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
-        LogUtil.info(logprefix, logLocation, "vertexType: " + vertex.getInfo().getType(), "");
+        Logger.info(logprefix, logLocation, "vertexType: " + vertex.getInfo().getType(), "");
 
         PushMessage pushMessage = null;
 

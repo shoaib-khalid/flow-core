@@ -1,11 +1,11 @@
 package com.kalsym.flowcore.services;
 
 import com.kalsym.flowcore.daos.models.*;
+import com.kalsym.flowcore.daos.models.conversationsubmodels.*;
 import com.kalsym.flowcore.daos.repositories.ConversationsRepostiory;
 import com.kalsym.flowcore.daos.repositories.FlowsRepostiory;
 import com.kalsym.flowcore.daos.repositories.VerticesRepostiory;
-import com.kalsym.flowcore.models.enums.VertexType;
-import com.kalsym.flowcore.utils.LogUtil;
+import com.kalsym.flowcore.utils.Logger;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,17 +64,17 @@ public class ConversationHandler {
         List<Conversation> conversationList = conversationsRepostiory.findAll(convoExample, Sort.by("lastModifiedDate").descending());
 
         if (conversationList.size() > 0) {
-            LogUtil.info(logprefix, logLocation, "conversation found", "");
+            Logger.info(logprefix, logLocation, "conversation found", "");
             return conversationList.get(0);
         }
-        LogUtil.info(logprefix, logLocation, "conversation  not found", "");
+        Logger.info(logprefix, logLocation, "conversation  not found", "");
 
         Conversation newConversation = new Conversation();
 
         newConversation.setSenderId(senderId);
         newConversation.setRefrenceId(refrenceId);
         newConversation.setFlowId(refrenceId);
-        LogUtil.info(logprefix, logLocation, "created conversation", "");
+        Logger.info(logprefix, logLocation, "created conversation", "");
 
         return conversationsRepostiory.save(newConversation);
 
@@ -93,30 +93,23 @@ public class ConversationHandler {
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         String vertexId = null;
 
-        if (null != conversation.getLatestVertexId()) {
-            LogUtil.info(logprefix, logLocation, "latest vertex found", "");
-            vertexId = conversation.getLatestVertexId();
+        if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
+            Logger.info(logprefix, logLocation, "current vertex found", "");
+            vertexId = conversation.getData().getCurrentVertexId();
         } else {
-            LogUtil.info(logprefix, logLocation, "latest vertex not found", "");
-
+            Logger.info(logprefix, logLocation, "latest vertex not found", "");
             Optional<Flow> flowOpt = flowsRepostiory.findById(conversation.getFlowId());
-            if (!flowOpt.isPresent()) {
-                LogUtil.info(logprefix, logLocation, "flow not found with id: " + conversation.getFlowId(), "");
-                throw new NotFoundException();
-            } else {
-                vertexId = flowOpt.get().getTopVertexId();
-                LogUtil.info(logprefix, logLocation, "flow found with id: " + conversation.getFlowId(), "");
-                conversation.setLatestVertexId(vertexId);
-                conversationsRepostiory.save(conversation);
-                LogUtil.info(logprefix, logLocation, "updated latestVertexId: " + vertexId, "");
-
-            }
+            vertexId = flowOpt.get().getTopVertexId();
+            Logger.info(logprefix, logLocation, "flow found with id: " + conversation.getFlowId(), "");
+            conversation.shiftVertex(vertexId);
+            conversationsRepostiory.save(conversation);
+            Logger.info(logprefix, logLocation, "updated currentVertexId: " + vertexId, "");
         }
 
         Optional<Vertex> vertexOpt = verticesRepostiory.findById(vertexId);
 
         if (!vertexOpt.isPresent()) {
-            LogUtil.info(logprefix, logLocation, "vertex not found with id: " + vertexId, "");
+            Logger.info(logprefix, logLocation, "vertex not found with id: " + vertexId, "");
             throw new NotFoundException();
         } else {
             return vertexOpt.get();
@@ -138,8 +131,8 @@ public class ConversationHandler {
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         Vertex vertex = null;
         Vertex nextVertex = null;
-        if (null != conversation.getLatestVertexId()) {
-            vertex = verticesRepostiory.findById(conversation.getLatestVertexId()).get();
+        if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
+            vertex = verticesRepostiory.findById(conversation.getData().getCurrentVertexId()).get();
             nextVertex = verticesHandler.getNextVertex(conversation, vertex, inputData);
         } else {
             //if conversation does not have latestVertexId consider it a new 
@@ -148,55 +141,11 @@ public class ConversationHandler {
             Flow flow = flowsRepostiory.findById(conversation.getRefrenceId()).get();
             nextVertex = vertex = verticesRepostiory.findById(flow.getTopVertexId()).get();
         }
-        LogUtil.info(logprefix, logLocation, "vertex: " + vertex.getId(), "");
-        LogUtil.info(logprefix, logLocation, "nextVertexId: " + nextVertex.getId(), "");
+        Logger.info(logprefix, logLocation, "vertex: " + vertex.getId(), "");
+        Logger.info(logprefix, logLocation, "nextVertexId: " + nextVertex.getId(), "");
 
-//        if (vertex.getId().equals(nextVertex.getId())) {
-//
-//            if (VertexType.TEXT_MESSAGE == vertex.getInfo().getType()) {
-//                int currentVertexSendCount = conversation.getData().getCurrentVertexSendCount();
-//                LogUtil.info(logprefix, logLocation, "vertex already sent " + currentVertexSendCount + " times", "");
-//                if (currentVertexSendCount >= vertex.getValidation().getRetry().getCount()) {
-//                    LogUtil.info(logprefix, logLocation, "vertex sen limit reached", "");
-//                    nextVertex = verticesRepostiory.findById(vertex.getValidation().getRetry().getFailureStep().getTargetId()).get();
-//                    LogUtil.info(logprefix, logLocation, "nextVertexId: " + nextVertex.getId(), "");
-//
-//                } else {
-//                    conversation.getData().setCurrentVertexSendCount(conversation.getData().getCurrentVertexSendCount() + 1);
-//
-//                }
-//            }
-//
-//        }
+
         return nextVertex;
-    }
-
-    /**
-     * Returns next vertex based on conversation flow and inputData.Returns flow
-     * top Vertex in case conversation does not have latestVertexId.
-     *
-     * @param conversation
-     * @param nextVertex
-     * @return Next vertex.
-     */
-    public Conversation shiftVertex(Conversation conversation, Vertex nextVertex) {
-
-        String logprefix = "";
-        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
-
-        if (null != conversation.getLatestVertexId()) {
-            conversation.setFlowId(nextVertex.getFlowId());
-            conversation.setLatestVertexId(nextVertex.getId());
-        } else {
-            if (!nextVertex.getFlowId().equals(conversation.getFlowId())) {
-                conversation.setFlowId(nextVertex.getFlowId());
-                LogUtil.info(logprefix, logLocation, "flow id changed to: " + nextVertex.getFlowId(), "");
-
-            }
-        }
-
-        return conversationsRepostiory.save(conversation);
-
     }
 
 }
