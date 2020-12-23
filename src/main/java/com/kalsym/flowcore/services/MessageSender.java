@@ -13,8 +13,8 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class MessageSender {
 
-    public String sendMessage(PushMessage message, String url) throws Exception {
-        String logprefix = "";
+    public String sendMessage(PushMessage message, String url, String refId) throws Exception {
+        String logprefix = refId;
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         Logger.info(logprefix, logLocation, "url: " + url, "");
 

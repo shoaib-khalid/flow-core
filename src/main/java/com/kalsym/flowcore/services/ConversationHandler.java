@@ -47,7 +47,7 @@ public class ConversationHandler {
      */
     public Conversation getConversation(String senderId, String refrenceId) throws Exception {
 
-        String logprefix = "";
+        String logprefix = senderId;
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
 
         Conversation searchConvo = new Conversation();
@@ -89,7 +89,7 @@ public class ConversationHandler {
      * @throws Exception
      */
     public Vertex getLatestVertex(Conversation conversation) throws Exception {
-        String logprefix = "";
+        String logprefix = conversation.getSenderId();
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         String vertexId = null;
 
@@ -126,8 +126,7 @@ public class ConversationHandler {
      * @return Next vertex.
      */
     public Vertex getNextVertex(Conversation conversation, String inputData) {
-
-        String logprefix = "";
+        String logprefix = conversation.getSenderId();
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         Vertex vertex = null;
         Vertex nextVertex = null;
@@ -143,7 +142,6 @@ public class ConversationHandler {
         }
         Logger.info(logprefix, logLocation, "vertex: " + vertex.getId(), "");
         Logger.info(logprefix, logLocation, "nextVertexId: " + nextVertex.getId(), "");
-
 
         return nextVertex;
     }

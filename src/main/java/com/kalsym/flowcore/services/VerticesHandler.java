@@ -1,5 +1,7 @@
 package com.kalsym.flowcore.services;
 
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 import com.kalsym.flowcore.models.pushmessages.*;
 import com.kalsym.flowcore.daos.models.*;
 import com.kalsym.flowcore.daos.models.vertexsubmodels.*;
@@ -9,6 +11,7 @@ import com.kalsym.flowcore.daos.repositories.FlowsRepostiory;
 import com.kalsym.flowcore.daos.repositories.VerticesRepostiory;
 import com.kalsym.flowcore.models.enums.*;
 import com.kalsym.flowcore.utils.Logger;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +19,12 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 /**
  *
@@ -34,6 +42,9 @@ public class VerticesHandler {
     @Autowired
     private VerticesRepostiory verticesRepostiory;
 
+    @Autowired
+    RestTemplate restTemplate;
+
     /**
      * Returns next Vertex after processing inputData through the provided
      * vertex.
@@ -45,7 +56,7 @@ public class VerticesHandler {
      */
     public Vertex getNextVertex(Conversation conversation, Vertex vertex, String inputData) {
 
-        String logprefix = "";
+        String logprefix = conversation.getSenderId();
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         Logger.info(logprefix, logLocation, "vertexType: " + vertex.getInfo().getType(), "");
 
@@ -53,7 +64,7 @@ public class VerticesHandler {
 
         Step step = null;
         if (VertexType.ACTION == vertex.getInfo().getType()) {
-
+            step = getStepByAction(conversation, vertex);
         }
 
         if (VertexType.MENU_MESSAGE == vertex.getInfo().getType()) {
@@ -61,7 +72,7 @@ public class VerticesHandler {
         }
 
         if (VertexType.TEXT_MESSAGE == vertex.getInfo().getType()) {
-            step = getStepVertexByText(conversation, vertex, inputData);
+            step = getStepByText(conversation, vertex, inputData);
         }
 
         if (VertexType.CONDITION == vertex.getInfo().getType()) {
@@ -90,7 +101,7 @@ public class VerticesHandler {
      * @param text
      * @return Step
      */
-    private Step getStepVertexByText(Conversation conversation, Vertex vertex, String text) {
+    private Step getStepByText(Conversation conversation, Vertex vertex, String text) {
         Validation validation = vertex.getValidation();
 
         if (ValidationInputType.TEXT == validation.getInputType()) {
@@ -135,13 +146,14 @@ public class VerticesHandler {
      * @return PushMessage
      */
     public PushMessage getPushMessage(Vertex vertex, List<String> recipients, String refId) {
-        String logprefix = "";
+        String logprefix = refId;
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         Logger.info(logprefix, logLocation, "vertexType: " + vertex.getInfo().getType(), "");
 
         PushMessage pushMessage = null;
 
         if (VertexType.ACTION == vertex.getInfo().getType()) {
+
         }
 
         if (VertexType.MENU_MESSAGE == vertex.getInfo().getType()) {
@@ -163,8 +175,6 @@ public class VerticesHandler {
     }
 
     private PushMessage processMenu(Vertex vertex) {
-        String logprefix = "";
-        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
 
         PushMessage pushMessage = new PushMessage();
 
@@ -194,8 +204,6 @@ public class VerticesHandler {
     }
 
     private PushMessage processTextMessage(Vertex vertex) {
-        String logprefix = "";
-        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
 
         PushMessage pushMessage = new PushMessage();
 
@@ -206,6 +214,85 @@ public class VerticesHandler {
         pushMessage.setUrlType("");
 
         return pushMessage;
+    }
+
+    private Step getStepByAction(Conversation conversation, Vertex vertex) {
+
+        Step step = null;
+
+        for (Action action : vertex.getActions()) {
+            if (VertexActionType.EXTERNAL_REQUEST == action.getType()) {
+                step = processExternalRequest(conversation, action.getExternalRequest());
+            }
+        }
+
+        if (step == null) {
+            step = vertex.getStep();
+        }
+
+        return step;
+    }
+
+    private Step processExternalRequest(Conversation conversation, ExternalRequest externalRequest) {
+        String logprefix = conversation.getSenderId();
+        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
+
+        Logger.info(logprefix, logLocation, "url: " + externalRequest.getUrl(), "");
+
+        try {
+            HashMap<String, String> erHeaders = externalRequest.getHeaders();
+
+            HttpHeaders headers = new HttpHeaders();
+
+            if (null != erHeaders) {
+                erHeaders.entrySet().forEach(mapElement -> {
+                    headers.add(mapElement.getKey(), mapElement.getValue());
+                });
+            }
+
+            HashMap<String, String> erBody = externalRequest.getPayload();
+
+            HashMap<String, String> requestBody = new HashMap<>();
+
+            erBody.entrySet().forEach(mapElement -> {
+
+                String elementValue = mapElement.getValue();
+
+                if (elementValue.startsWith("$%") && elementValue.endsWith("$%")) {
+                    elementValue = elementValue.replaceAll("&%", "");
+                    requestBody.put(mapElement.getKey(), conversation.getVariableValue(elementValue));
+                } else {
+                    requestBody.put(mapElement.getKey(), elementValue);
+
+                }
+            });
+            URI uri = null;
+            HttpEntity<HashMap> requestEntity = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<String> responseEntity = restTemplate.exchange(externalRequest.getUrl(), externalRequest.getHttpMethod(), requestEntity, String.class);
+
+            if (HttpStatus.ACCEPTED == responseEntity.getStatusCode()
+                    || HttpStatus.CREATED == responseEntity.getStatusCode()) {
+
+                DocumentContext jsonContext = JsonPath.parse(responseEntity.getBody());
+
+                HashMap<String, String> responseMapping = externalRequest.getResponseMapping();
+                responseMapping.entrySet().forEach(mapElement -> {
+                    String value = jsonContext.read(mapElement.getValue());
+                    conversation.setVariableValue(mapElement.getKey(), value);
+                });
+
+                conversationsRepostiory.save(conversation);
+
+            } else {
+                return externalRequest.getErrorStep();
+            }
+        } catch (Exception e) {
+            Logger.error(logprefix, logLocation, "Error processing request params", "", e);
+            return externalRequest.getErrorStep();
+        }
+
+        return null;
     }
 
 }

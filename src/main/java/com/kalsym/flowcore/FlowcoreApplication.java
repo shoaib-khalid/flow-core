@@ -1,6 +1,7 @@
 package com.kalsym.flowcore;
 
 import com.kalsym.flowcore.utils.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -8,6 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
+import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
 @EnableMongoAuditing
@@ -20,6 +22,7 @@ public class FlowcoreApplication {
 
     @Value("${build.version:not-known}")
     String version;
+
 
     @Bean
     CommandLineRunner lookup(ApplicationContext context) {
@@ -35,6 +38,11 @@ public class FlowcoreApplication {
                     + " :: com.kalsym ::              (v" + VersionHolder.VERSION + ")", "");
 
         };
+    }
+
+    @Bean
+    public RestTemplate getRestTemplate() {
+        return new RestTemplate();
     }
 
 }

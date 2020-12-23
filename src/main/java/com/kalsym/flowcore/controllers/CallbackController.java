@@ -66,7 +66,7 @@ public class CallbackController {
             @RequestParam(name = "senderId", required = true) String senderId,
             @RequestParam(name = "refrenceId", required = true) String refrenceId,
             @RequestBody(required = true) RequestPayload requestBody) {
-        String logprefix = request.getRequestURI() + " ";
+        String logprefix = senderId;
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         HttpReponse response = new HttpReponse(request.getRequestURI());
 
@@ -91,7 +91,7 @@ public class CallbackController {
             if (VertexType.TEXT_MESSAGE == nextVertex.getInfo().getType()) {
                 url = requestBody.getCallbackUrl() + "callback/pushSimpleMessage";
             }
-            messageSender.sendMessage(pushMessage, url);
+            messageSender.sendMessage(pushMessage, url, conversation.getSenderId());
             conversation.shiftVertex(nextVertex);
             conversationsRepostiory.save(conversation);
         } catch (Exception e) {
@@ -115,7 +115,7 @@ public class CallbackController {
             @RequestParam(name = "senderId", required = true) String senderId,
             @RequestParam(name = "refrenceId", required = true) String refrenceId,
             @RequestBody(required = true) RequestPayload requestBody) {
-        String logprefix = request.getRequestURI() + " ";
+        String logprefix = senderId;
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         HttpReponse response = new HttpReponse(request.getRequestURI());
         Logger.info(logprefix, logLocation, "queryString: " + request.getQueryString(), "");
@@ -138,7 +138,7 @@ public class CallbackController {
             if (VertexType.TEXT_MESSAGE == nextVertex.getInfo().getType()) {
                 url = requestBody.getCallbackUrl() + "callback/pushSimpleMessage";
             }
-            messageSender.sendMessage(pushMessage, url);
+            messageSender.sendMessage(pushMessage, url, conversation.getSenderId());
             conversation.shiftVertex(nextVertex);
             conversationsRepostiory.save(conversation);
         } catch (Exception e) {

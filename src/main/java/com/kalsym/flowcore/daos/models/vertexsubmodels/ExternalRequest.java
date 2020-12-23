@@ -15,10 +15,10 @@ public class ExternalRequest {
 
     private String url;
     private HttpMethod httpMethod;
-    private HashMap<String, String> hreaders;
-    private HashMap<String, Object> payload;
+    private HashMap<String, String> headers;
+    private HashMap<String, String> payload;
 
-    private HashMap<String, Object> responseMapping;
+    private HashMap<String, String> responseMapping;
 
     private Step errorStep;
 
