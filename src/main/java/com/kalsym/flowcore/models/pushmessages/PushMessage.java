@@ -17,6 +17,8 @@ public class PushMessage {
     private String subTitle;
     private String url;
     private String urlType;
+    
+    private boolean isGuest;
 
     private List<MenuItem> menuItems;
     private String message;

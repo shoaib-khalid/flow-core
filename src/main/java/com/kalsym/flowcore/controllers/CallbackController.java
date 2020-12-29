@@ -2,9 +2,6 @@ package com.kalsym.flowcore.controllers;
 
 import com.kalsym.flowcore.daos.models.*;
 import com.kalsym.flowcore.models.pushmessages.*;
-import com.kalsym.flowcore.daos.models.*;
-import com.kalsym.flowcore.daos.models.vertexsubmodels.*;
-import com.kalsym.flowcore.daos.models.conversationsubmodels.*;
 import com.kalsym.flowcore.daos.repositories.ConversationsRepostiory;
 import com.kalsym.flowcore.daos.repositories.VerticesRepostiory;
 import com.kalsym.flowcore.models.*;
@@ -71,6 +68,9 @@ public class CallbackController {
         HttpReponse response = new HttpReponse(request.getRequestURI());
 
         Logger.info(logprefix, logLocation, "queryString: " + request.getQueryString(), "");
+        if (null != requestBody) {
+            Logger.info(logprefix, logLocation, "body: " + requestBody.toString(), "");
+        }
 
         try {
             Conversation conversation = conversationHandler.getConversation(senderId, refrenceId);
@@ -80,7 +80,7 @@ public class CallbackController {
 
             List<String> recipients = new ArrayList<>();
             recipients.add(senderId);
-            PushMessage pushMessage = verticesHandler.getPushMessage(nextVertex, recipients, senderId);
+            PushMessage pushMessage = nextVertex.getPushMessage(conversation.getData(), recipients, logprefix);
             response.setData(pushMessage);
 
             String url = "";
@@ -91,7 +91,7 @@ public class CallbackController {
             if (VertexType.TEXT_MESSAGE == nextVertex.getInfo().getType()) {
                 url = requestBody.getCallbackUrl() + "callback/pushSimpleMessage";
             }
-            messageSender.sendMessage(pushMessage, url, conversation.getSenderId());
+            messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), requestBody.getIsGuest());
             conversation.shiftVertex(nextVertex);
             conversationsRepostiory.save(conversation);
         } catch (Exception e) {
@@ -119,7 +119,9 @@ public class CallbackController {
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         HttpReponse response = new HttpReponse(request.getRequestURI());
         Logger.info(logprefix, logLocation, "queryString: " + request.getQueryString(), "");
-
+        if (null != requestBody) {
+            Logger.info(logprefix, logLocation, "body: " + requestBody.toString(), "");
+        }
         try {
             Conversation conversation = conversationHandler.getConversation(senderId, refrenceId);
             Logger.info(logprefix, logLocation, "conversationId: " + conversation.getId(), "");
@@ -129,7 +131,7 @@ public class CallbackController {
 
             List<String> recipients = new ArrayList<>();
             recipients.add(senderId);
-            PushMessage pushMessage = verticesHandler.getPushMessage(nextVertex, recipients, senderId);
+            PushMessage pushMessage = nextVertex.getPushMessage(conversation.getData(), recipients, logprefix);
             response.setData(pushMessage);
             if (VertexType.MENU_MESSAGE == nextVertex.getInfo().getType()) {
                 url = requestBody.getCallbackUrl() + "callback/pushMenuMessage";
@@ -138,7 +140,7 @@ public class CallbackController {
             if (VertexType.TEXT_MESSAGE == nextVertex.getInfo().getType()) {
                 url = requestBody.getCallbackUrl() + "callback/pushSimpleMessage";
             }
-            messageSender.sendMessage(pushMessage, url, conversation.getSenderId());
+            messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), requestBody.getIsGuest());
             conversation.shiftVertex(nextVertex);
             conversationsRepostiory.save(conversation);
         } catch (Exception e) {

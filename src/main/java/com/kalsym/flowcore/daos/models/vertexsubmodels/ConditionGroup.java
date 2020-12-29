@@ -1,6 +1,7 @@
 package com.kalsym.flowcore.daos.models.vertexsubmodels;
 
 import com.kalsym.flowcore.models.enums.MatchOperator;
+import com.kalsym.flowcore.utils.Logger;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,11 +30,12 @@ public class ConditionGroup {
         }
 
 //        LogUtil.info(logprefix, logLocation, "caseSensitive: " + caseSensitive, "");
-
-//        LogUtil.info(logprefix, logLocation, "value: " + localValue + " data: " + data, "");
+//        Logger.info(logprefix, logLocation, "value: " + localValue + " data: " + data, "");
+        Logger.info(logprefix, logLocation, "match: " + match, "");
+        //       Logger.info(logprefix, logLocation, "MatchOperator.IS == match: " + (MatchOperator.IS == match), "");
 
         if (MatchOperator.IS == match) {
-//            LogUtil.info(logprefix, logLocation, "IS: " + data.equalsIgnoreCase(localValue), "");
+            Logger.info(logprefix, logLocation, "IS: " + data.equalsIgnoreCase(localValue), "");
 
             return data.equalsIgnoreCase(localValue);
         } else if (MatchOperator.STARTS == match) {

@@ -40,7 +40,7 @@ public class Condition {
                 }
             } else {
                 if (conditionGroup.match(variableValue)) {
-                    return step = this.step;
+                    step = this.step;
                 } else {
                     step = null;
                 }

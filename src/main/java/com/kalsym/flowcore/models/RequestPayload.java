@@ -18,6 +18,6 @@ public class RequestPayload {
     private String data;
     private String referral;
     private String msgId;
-    private boolean isGuest;
+    private Boolean isGuest;
     private String callbackUrl;
 }

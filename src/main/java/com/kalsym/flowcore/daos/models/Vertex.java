@@ -2,8 +2,14 @@ package com.kalsym.flowcore.daos.models;
 
 import com.kalsym.flowcore.daos.models.conversationsubmodels.Data;
 import com.kalsym.flowcore.daos.models.vertexsubmodels.*;
+import com.kalsym.flowcore.models.enums.VertexType;
+import com.kalsym.flowcore.models.pushmessages.*;
+import com.kalsym.flowcore.utils.Logger;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
@@ -37,7 +43,7 @@ public class Vertex {
 
     private Step step;
 
-    private String customVariableName;
+    private String dataVariable;
 
     @CreatedDate
     private Date createdDate;
@@ -55,29 +61,101 @@ public class Vertex {
      */
     public Step matchConditions(Data data) {
 
+        Step step = null;
         for (Condition condition : conditions) {
-            return condition.match(data);
-        }
-
-        return this.step;
-    }
-
-    /**
-     * Traverses through options and takes matching value. If non of the options
-     * match returns the step from vertex.
-     *
-     * @param targetId Id of next vertex
-     * @return Step
-     */
-    public Step matchOptions(String targetId) {
-
-        for (Option option : this.options) {
-            if (targetId.equalsIgnoreCase(option.getStep().getTargetId())) {
-                return option.getStep();
+            step = condition.match(data);
+            if (step != null) {
+                break;
             }
         }
 
-        return this.step;
+        if (step == null) {
+            step = this.step;
+        }
+
+        return step;
+    }
+
+    /**
+     * Traverses through options and takes matching value.If non of the options
+     * match returns the step from vertex.
+     *
+     * @param value
+     * @param dataVariables
+     * @return Step
+     */
+    public Option matchOptions(String value, HashMap<String, String> dataVariables) {
+
+        for (Option option : this.options) {
+            if (option.match(value, dataVariables)) {
+                return option;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Generates push message for the vertex.
+     *
+     * @param data
+     * @param recipients
+     * @param refId
+     * @return PushMessage
+     */
+    public PushMessage getPushMessage(Data data, List<String> recipients, String refId) {
+        String logprefix = refId;
+        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
+        Logger.info(logprefix, logLocation, "vertexType: " + this.getInfo().getType(), "");
+
+        PushMessage pushMessage = new PushMessage();
+
+        pushMessage.setTitle(this.info.getTitle());
+        pushMessage.setSubTitle(this.info.getText());
+
+        if (VertexType.MENU_MESSAGE == this.getInfo().getType()) {
+            List<MenuItem> menuItems = new ArrayList<>();
+            for (Option option : this.options) {
+                menuItems.add(option.getMenuItem());
+            }
+
+            if (null == this.options || options.isEmpty()) {
+                MenuItem menuItem = new MenuItem();
+                menuItem.setTitle("Default");
+                menuItem.setType("postback");
+                menuItem.setPayload(this.step.getTargetId());
+                menuItems.add(menuItem);
+            }
+
+            pushMessage.setMessage(null);
+            pushMessage.setMenuItems(menuItems);
+        }
+
+        if (VertexType.TEXT_MESSAGE == this.info.getType()) {
+            pushMessage.setMessage(insertDataVaiables(data.getVariables()));
+        }
+
+        pushMessage.setUrl("https://www.telenor.com.pk/static/2020/08/Family-Plans-Banner-Landing-Page-780x425-1.png");
+        pushMessage.setUrlType("IMAGE");
+
+        pushMessage.setRecipientIds(recipients);
+        pushMessage.setRefId(refId);
+
+        return pushMessage;
+    }
+
+    public String insertDataVaiables(HashMap<String, String> dataVariables) {
+
+        String text = this.info.getText();
+        if (null != dataVariables) {
+            for (Map.Entry<String, String> mapElement : dataVariables.entrySet()) {
+                String key = mapElement.getKey();
+                String value = mapElement.getValue();
+                text = text.replace("$%" + key + "$%", value);
+
+            }
+        }
+        return text;
     }
 
 }

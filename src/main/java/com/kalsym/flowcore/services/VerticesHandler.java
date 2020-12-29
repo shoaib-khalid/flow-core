@@ -5,7 +5,6 @@ import com.jayway.jsonpath.JsonPath;
 import com.kalsym.flowcore.models.pushmessages.*;
 import com.kalsym.flowcore.daos.models.*;
 import com.kalsym.flowcore.daos.models.vertexsubmodels.*;
-import com.kalsym.flowcore.daos.models.conversationsubmodels.*;
 import com.kalsym.flowcore.daos.repositories.ConversationsRepostiory;
 import com.kalsym.flowcore.daos.repositories.FlowsRepostiory;
 import com.kalsym.flowcore.daos.repositories.VerticesRepostiory;
@@ -15,9 +14,11 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -68,7 +69,7 @@ public class VerticesHandler {
         }
 
         if (VertexType.MENU_MESSAGE == vertex.getInfo().getType()) {
-            step = vertex.matchOptions(inputData);
+            step = getStepByMenu(vertex, conversation, inputData);
         }
 
         if (VertexType.TEXT_MESSAGE == vertex.getInfo().getType()) {
@@ -79,12 +80,15 @@ public class VerticesHandler {
             step = vertex.matchConditions(conversation.getData());
         }
 
-        Logger.info(logprefix, logLocation, "nextVertex Id: " + step.getTargetId(), "");
+        Logger.info(logprefix, logLocation, "vertexId: " + vertex.getId(), "");
+        Logger.info(logprefix, logLocation, "nextVertexId: " + step.getTargetId(), "");
         Optional<Vertex> vertexOpt = verticesRepostiory.findById(step.getTargetId());
         nextVertex = vertexOpt.get();
 
         if (VertexType.ACTION == nextVertex.getInfo().getType()
                 || VertexType.CONDITION == nextVertex.getInfo().getType()) {
+            Logger.info(logprefix, logLocation, "recursing through " + nextVertex.getInfo().getType() + " type", "");
+
             nextVertex = getNextVertex(conversation, nextVertex, inputData);
         }
 
@@ -102,6 +106,9 @@ public class VerticesHandler {
      * @return Step
      */
     private Step getStepByText(Conversation conversation, Vertex vertex, String text) {
+
+        String logprefix = conversation.getSenderId();
+        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         Validation validation = vertex.getValidation();
 
         if (ValidationInputType.TEXT == validation.getInputType()) {
@@ -109,23 +116,16 @@ public class VerticesHandler {
             Matcher m = p.matcher(text);
 
             if (m.matches()) {
+                Logger.info(logprefix, logLocation, "validation success for data: " + text, "");
 
-                Data data = conversation.getData();
-
-                if (null == data) {
-                    data = new Data();
-                }
-
-                HashMap<String, String> variables = data.getVariables();
-                if (null == variables) {
-                    variables = new HashMap<>();
-                }
-
-                variables.put(vertex.getCustomVariableName(), text);
-                data.setVariables(variables);
-                conversation.setData(data);
+                conversation.setVariableValue(vertex.getDataVariable(), text);
                 conversationsRepostiory.save(conversation);
+                Logger.info(logprefix, logLocation, "saved " + vertex.getDataVariable() + ": " + text, "");
+
                 return vertex.getStep();
+            } else {
+                Logger.info(logprefix, logLocation, "validation failed for data: " + text, "");
+
             }
         }
 
@@ -137,86 +137,17 @@ public class VerticesHandler {
     }
 
     /**
-     * Compiles and returns the push message based on Vertex/
+     * Performs provided actions for a conversation and returns next Step
+     * accordingly.
      *
+     * @param conversation
      * @param vertex
-     * @param recipients
-     * @param refId
-     *
-     * @return PushMessage
+     * @return Next Step
      */
-    public PushMessage getPushMessage(Vertex vertex, List<String> recipients, String refId) {
-        String logprefix = refId;
-        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
-        Logger.info(logprefix, logLocation, "vertexType: " + vertex.getInfo().getType(), "");
-
-        PushMessage pushMessage = null;
-
-        if (VertexType.ACTION == vertex.getInfo().getType()) {
-
-        }
-
-        if (VertexType.MENU_MESSAGE == vertex.getInfo().getType()) {
-            pushMessage = processMenu(vertex);
-        }
-
-        if (VertexType.TEXT_MESSAGE == vertex.getInfo().getType()) {
-            pushMessage = processTextMessage(vertex);
-        }
-
-        if (VertexType.CONDITION == vertex.getInfo().getType()) {
-
-        }
-
-        pushMessage.setRecipientIds(recipients);
-        pushMessage.setRefId(refId);
-
-        return pushMessage;
-    }
-
-    private PushMessage processMenu(Vertex vertex) {
-
-        PushMessage pushMessage = new PushMessage();
-
-        pushMessage.setTitle(vertex.getInfo().getTitle());
-        pushMessage.setSubTitle(vertex.getInfo().getText());
-
-        List<MenuItem> menuItems = new ArrayList<>();
-        for (Option option : vertex.getOptions()) {
-            MenuItem menuItem = new MenuItem();
-            menuItem.setTitle(option.getText());
-            menuItem.setType("postback");
-            menuItem.setPayload(option.getStep().getTargetId());
-            menuItems.add(menuItem);
-        }
-
-        if (null == vertex.getOptions() || vertex.getOptions().isEmpty()) {
-            MenuItem menuItem = new MenuItem();
-            menuItem.setTitle("Default");
-            menuItem.setType("postback");
-            menuItem.setPayload(vertex.getStep().getTargetId());
-            menuItems.add(menuItem);
-        }
-
-        pushMessage.setMenuItems(menuItems);
-
-        return pushMessage;
-    }
-
-    private PushMessage processTextMessage(Vertex vertex) {
-
-        PushMessage pushMessage = new PushMessage();
-
-        pushMessage.setTitle(vertex.getInfo().getTitle());
-        pushMessage.setSubTitle(vertex.getInfo().getText());
-        pushMessage.setMessage(vertex.getInfo().getText());
-        pushMessage.setUrl("");
-        pushMessage.setUrlType("");
-
-        return pushMessage;
-    }
-
     private Step getStepByAction(Conversation conversation, Vertex vertex) {
+
+        String logprefix = conversation.getSenderId();
+        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
 
         Step step = null;
 
@@ -224,20 +155,39 @@ public class VerticesHandler {
             if (VertexActionType.EXTERNAL_REQUEST == action.getType()) {
                 step = processExternalRequest(conversation, action.getExternalRequest());
             }
+
+            if (step != null) {
+                Logger.info(logprefix, logLocation, "error processing action: " + action.getType(), "");
+                Logger.info(logprefix, logLocation, "errorStepTargetId: " + step.getTargetId(), "");
+                return step;
+            }
+
+            Logger.info(logprefix, logLocation, "successfully processed action: " + action.getType(), "");
+
         }
 
         if (step == null) {
             step = vertex.getStep();
+            Logger.info(logprefix, logLocation, "no error assigning next step: " + step.getTargetId(), "");
         }
 
         return step;
     }
 
+    /**
+     * Sends external request to provided URL and saves dataVariables after
+     * successful response.
+     *
+     * @param conversation
+     * @param externalRequest
+     * @return Next Step
+     */
     private Step processExternalRequest(Conversation conversation, ExternalRequest externalRequest) {
         String logprefix = conversation.getSenderId();
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
 
         Logger.info(logprefix, logLocation, "url: " + externalRequest.getUrl(), "");
+        Logger.info(logprefix, logLocation, "httpMethod: " + externalRequest.getHttpMethod(), "");
 
         try {
             HashMap<String, String> erHeaders = externalRequest.getHeaders();
@@ -250,37 +200,42 @@ public class VerticesHandler {
                 });
             }
 
-            HashMap<String, String> erBody = externalRequest.getPayload();
+            ExternalRequestBody erBody = externalRequest.getBody();
+            HttpEntity<String> requestEntity = null;
+            if (DataFomat.JSON == erBody.getFormat()) {
+                String payload = erBody.getPayload();
 
-            HashMap<String, String> requestBody = new HashMap<>();
-
-            erBody.entrySet().forEach(mapElement -> {
-
-                String elementValue = mapElement.getValue();
-
-                if (elementValue.startsWith("$%") && elementValue.endsWith("$%")) {
-                    elementValue = elementValue.replaceAll("&%", "");
-                    requestBody.put(mapElement.getKey(), conversation.getVariableValue(elementValue));
-                } else {
-                    requestBody.put(mapElement.getKey(), elementValue);
-
+                if (null != conversation.getData().getVariables()) {
+                    HashMap<String, String> datavariables = conversation.getData().getVariables();
+                    for (Map.Entry<String, String> mapElement : datavariables.entrySet()) {
+                        String key = mapElement.getKey();
+                        String value = mapElement.getValue();
+                        payload = payload.replace("$%" + key + "$%", value);
+                    }
                 }
-            });
+
+                requestEntity = new HttpEntity<>(payload, headers);
+            }
+
             URI uri = null;
-            HttpEntity<HashMap> requestEntity = new HttpEntity<>(requestBody, headers);
 
             ResponseEntity<String> responseEntity = restTemplate.exchange(externalRequest.getUrl(), externalRequest.getHttpMethod(), requestEntity, String.class);
 
+            Logger.info(logprefix, logLocation, "responseStatus: " + responseEntity.getStatusCode(), "");
+
             if (HttpStatus.ACCEPTED == responseEntity.getStatusCode()
-                    || HttpStatus.CREATED == responseEntity.getStatusCode()) {
+                    || HttpStatus.CREATED == responseEntity.getStatusCode()
+                    || HttpStatus.OK == responseEntity.getStatusCode()) {
 
                 DocumentContext jsonContext = JsonPath.parse(responseEntity.getBody());
 
-                HashMap<String, String> responseMapping = externalRequest.getResponseMapping();
-                responseMapping.entrySet().forEach(mapElement -> {
-                    String value = jsonContext.read(mapElement.getValue());
-                    conversation.setVariableValue(mapElement.getKey(), value);
-                });
+                List<ExternalRequestResponseMapping> responseMappings = externalRequest.getResponse().getMapping();
+
+                for (ExternalRequestResponseMapping errm : responseMappings) {
+                    String value = jsonContext.read(errm.getPath());
+                    conversation.setVariableValue(errm.getDataVariable(), value);
+                    Logger.info(logprefix, logLocation, "saved " + errm.getDataVariable() + ": " + value, "");
+                }
 
                 conversationsRepostiory.save(conversation);
 
@@ -288,11 +243,35 @@ public class VerticesHandler {
                 return externalRequest.getErrorStep();
             }
         } catch (Exception e) {
-            Logger.error(logprefix, logLocation, "Error processing request params", "", e);
+            Logger.error(logprefix, logLocation, "Error processing external request", "", e);
             return externalRequest.getErrorStep();
         }
 
         return null;
+    }
+
+    /**
+     * Returns step after passing input through options. Also save the value of
+     * the chosen option.
+     *
+     * @param vertex
+     * @param conversation
+     * @param value
+     * @return Next Step
+     */
+    private Step getStepByMenu(Vertex vertex, Conversation conversation, String value) {
+        String logprefix = conversation.getSenderId();
+        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
+        Option option = vertex.matchOptions(value, conversation.getData().getVariables());
+
+        if (null != option) {
+            conversation.setVariableValue(vertex.getDataVariable(), value);
+            Logger.info(logprefix, logLocation, "saved " + vertex.getDataVariable() + ": " + value, "");
+            conversationsRepostiory.save(conversation);
+            return option.getStep();
+        }
+
+        return vertex.getStep();
     }
 
 }

@@ -131,17 +131,21 @@ public class ConversationHandler {
         Vertex vertex = null;
         Vertex nextVertex = null;
         if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
+            Logger.info(logprefix, logLocation, "currentVertexId: " + conversation.getData().getCurrentVertexId(), "");
+
             vertex = verticesRepostiory.findById(conversation.getData().getCurrentVertexId()).get();
             nextVertex = verticesHandler.getNextVertex(conversation, vertex, inputData);
         } else {
             //if conversation does not have latestVertexId consider it a new 
             //conversation and attach flow's topVertexId to conversation's 
             //latestVertexId
+            Logger.info(logprefix, logLocation, "currentVertexId no present", "");
+
             Flow flow = flowsRepostiory.findById(conversation.getRefrenceId()).get();
             nextVertex = vertex = verticesRepostiory.findById(flow.getTopVertexId()).get();
+            Logger.info(logprefix, logLocation, "assigned currentVertexId: " + vertex.getId(), "");
+
         }
-        Logger.info(logprefix, logLocation, "vertex: " + vertex.getId(), "");
-        Logger.info(logprefix, logLocation, "nextVertexId: " + nextVertex.getId(), "");
 
         return nextVertex;
     }
