@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -204,7 +205,7 @@ public class VerticesHandler {
             HttpEntity<String> requestEntity = null;
             if (DataFomat.JSON == erBody.getFormat()) {
                 String payload = erBody.getPayload();
-
+                headers.setContentType(MediaType.APPLICATION_JSON);
                 if (null != conversation.getData().getVariables()) {
                     HashMap<String, String> datavariables = conversation.getData().getVariables();
                     for (Map.Entry<String, String> mapElement : datavariables.entrySet()) {
@@ -232,9 +233,21 @@ public class VerticesHandler {
                 List<ExternalRequestResponseMapping> responseMappings = externalRequest.getResponse().getMapping();
 
                 for (ExternalRequestResponseMapping errm : responseMappings) {
-                    String value = jsonContext.read(errm.getPath());
-                    conversation.setVariableValue(errm.getDataVariable(), value);
-                    Logger.info(logprefix, logLocation, "saved " + errm.getDataVariable() + ": " + value, "");
+
+                    try {
+                        String value = jsonContext.read(errm.getPath());
+                        conversation.setVariableValue(errm.getDataVariable(), value);
+                        Logger.info(logprefix, logLocation, "saved " + errm.getDataVariable() + ": " + value, "");
+                    } catch (Exception e) {
+                        if (errm.isOptional()) {
+                            Logger.warn(logprefix, logLocation, "could not read optional " + errm.getDataVariable(), "");
+
+                        } else {
+                            Logger.error(logprefix, logLocation, "Cannot find non-optional variable " + errm.getDataVariable(), "", e);
+                            return externalRequest.getErrorStep();
+                        }
+                    }
+
                 }
 
                 conversationsRepostiory.save(conversation);

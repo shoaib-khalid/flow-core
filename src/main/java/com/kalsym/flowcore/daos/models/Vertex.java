@@ -116,7 +116,19 @@ public class Vertex {
         if (VertexType.MENU_MESSAGE == this.getInfo().getType()) {
             List<MenuItem> menuItems = new ArrayList<>();
             for (Option option : this.options) {
-                menuItems.add(option.getMenuItem());
+                MenuItem menuItem = null;
+                if (data == null) {
+                    menuItem = option.getMenuItem(null);
+                } else {
+                    menuItem = option.getMenuItem(data.getVariables());
+                }
+
+                Logger.info(logprefix, logLocation, "menuTile: " + menuItem.getTitle(), "");
+                Logger.info(logprefix, logLocation, "menuPayload: " + menuItem.getPayload(), "");
+
+                if (menuItem.getPayload() != null && menuItem.getTitle() != null) {
+                    menuItems.add(menuItem);
+                }
             }
 
             if (null == this.options || options.isEmpty()) {

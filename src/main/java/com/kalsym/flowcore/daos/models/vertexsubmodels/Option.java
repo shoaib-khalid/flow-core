@@ -1,7 +1,9 @@
 package com.kalsym.flowcore.daos.models.vertexsubmodels;
 
 import com.kalsym.flowcore.models.pushmessages.MenuItem;
+import com.kalsym.flowcore.utils.Logger;
 import java.util.HashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,11 +19,30 @@ public class Option {
     private Step step;
     private String value;
 
-    public MenuItem getMenuItem() {
+    public MenuItem getMenuItem(HashMap<String, String> dataVariables) {
         MenuItem menuItem = new MenuItem();
-        menuItem.setTitle(this.text);
+
+        String menuItemTitle = this.text;
+        String menuValue = this.value;
+
+        if (null != dataVariables) {
+
+            if (menuItemTitle.startsWith("$%") && menuItemTitle.endsWith("$%")) {
+                String variableName = menuItemTitle.replace("$%", "");
+                menuItemTitle = dataVariables.get(variableName);
+
+            }
+
+            if (menuValue.startsWith("$%") && menuValue.endsWith("$%")) {
+                String variableName = menuValue.replace("$%", "");
+                menuValue = dataVariables.get(variableName);
+
+            }
+        }
+
+        menuItem.setTitle(menuItemTitle);
         menuItem.setType("postback");
-        menuItem.setPayload(this.value);
+        menuItem.setPayload(menuValue);
         return menuItem;
     }
 

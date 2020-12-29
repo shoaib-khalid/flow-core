@@ -21,11 +21,12 @@ public class Condition {
     private Step step;
 
     public Step match(Data data) {
+        String logprefix = "";
+        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
+
         Step step = null;
 
         HashMap<String, String> variables = data.getVariables();
-        String logprefix = "";
-        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
 
         for (ConditionGroup conditionGroup : groups) {
 

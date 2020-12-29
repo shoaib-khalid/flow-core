@@ -13,4 +13,5 @@ public class ExternalRequestResponseMapping {
 
     private String dataVariable;
     private String path;
+    private boolean optional;
 }
