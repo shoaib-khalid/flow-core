@@ -9,6 +9,8 @@ public enum MatchOperator {
     IS,
     STARTS,
     ENDS,
-    NOT
+    NOT,
+    GREATER_THAN,
+    LESS_THAN
 }
 

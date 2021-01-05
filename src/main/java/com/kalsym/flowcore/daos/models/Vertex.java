@@ -139,12 +139,22 @@ public class Vertex {
                 menuItems.add(menuItem);
             }
 
+            if (null == data) {
+                pushMessage.setSubTitle(insertDataVaiables(null));
+            } else {
+                pushMessage.setSubTitle(insertDataVaiables(data.getVariables()));
+            }
             pushMessage.setMessage(null);
             pushMessage.setMenuItems(menuItems);
         }
 
         if (VertexType.TEXT_MESSAGE == this.info.getType()) {
-            pushMessage.setMessage(insertDataVaiables(data.getVariables()));
+            if (null == data) {
+                pushMessage.setMessage(insertDataVaiables(null));
+            } else {
+                pushMessage.setMessage(insertDataVaiables(data.getVariables()));
+            }
+
         }
 
         pushMessage.setUrl("https://www.telenor.com.pk/static/2020/08/Family-Plans-Banner-Landing-Page-780x425-1.png");

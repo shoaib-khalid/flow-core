@@ -47,6 +47,25 @@ public class ConditionGroup {
 
             return data.endsWith(localValue);
 
+        } else if (MatchOperator.GREATER_THAN == match || MatchOperator.LESS_THAN == match) {
+            try {
+                long longVal = Long.parseLong(localValue);
+                long longData = Long.parseLong(data);
+
+                if (MatchOperator.GREATER_THAN == match) {
+                    Logger.info(logprefix, logLocation, "GREATER_THAN: " + (longData > longVal), "");
+
+                    return longData > longVal;
+                } else if (MatchOperator.LESS_THAN == match) {
+                    Logger.info(logprefix, logLocation, "LESS_THAN: " + (longData < longVal), "");
+
+                    return longData < longVal;
+                }
+
+            } catch (NumberFormatException e) {
+                Logger.error(logprefix, logLocation, "Error doing comparison", "", e);
+                return false;
+            }
         }
 
         return false;

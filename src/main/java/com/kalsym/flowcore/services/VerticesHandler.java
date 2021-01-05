@@ -228,14 +228,17 @@ public class VerticesHandler {
                     || HttpStatus.CREATED == responseEntity.getStatusCode()
                     || HttpStatus.OK == responseEntity.getStatusCode()) {
 
-                DocumentContext jsonContext = JsonPath.parse(responseEntity.getBody());
+                String responseBody = responseEntity.getBody();
+                DocumentContext jsonContext = JsonPath.parse(responseBody);
+
+                Logger.info(logprefix, logLocation, "responseBody: " + responseBody, "");
 
                 List<ExternalRequestResponseMapping> responseMappings = externalRequest.getResponse().getMapping();
 
                 for (ExternalRequestResponseMapping errm : responseMappings) {
 
                     try {
-                        String value = jsonContext.read(errm.getPath());
+                        String value = jsonContext.read(errm.getPath())+"";
                         conversation.setVariableValue(errm.getDataVariable(), value);
                         Logger.info(logprefix, logLocation, "saved " + errm.getDataVariable() + ": " + value, "");
                     } catch (Exception e) {
