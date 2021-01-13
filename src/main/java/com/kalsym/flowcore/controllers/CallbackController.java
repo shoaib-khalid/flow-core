@@ -46,9 +46,6 @@ public class CallbackController {
     @Autowired
     private VerticesHandler verticesHandler;
 
-    @Autowired
-    private MessageSender messageSender;
-
     /**
      * Postback receives id targetId in the payload as data.
      *
@@ -76,26 +73,11 @@ public class CallbackController {
             Conversation conversation = conversationHandler.getConversation(senderId, refrenceId);
             Logger.info(logprefix, logLocation, "conversationId: " + conversation.getId(), "");
 
-            Vertex nextVertex = conversationHandler.getNextVertex(conversation, requestBody.getData());
+            conversation = conversationHandler.processConversastion(conversation, requestBody);
 
-            List<String> recipients = new ArrayList<>();
-            recipients.add(senderId);
-            PushMessage pushMessage = nextVertex.getPushMessage(conversation.getData(), recipients, logprefix);
-            response.setData(pushMessage);
-
-            String url = "";
-            if (VertexType.MENU_MESSAGE == nextVertex.getInfo().getType()) {
-                url = requestBody.getCallbackUrl() + "callback/pushMenuMessage";
-            }
-
-            if (VertexType.TEXT_MESSAGE == nextVertex.getInfo().getType()) {
-                url = requestBody.getCallbackUrl() + "callback/pushSimpleMessage";
-            }
-            messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), requestBody.getIsGuest());
-            conversation.shiftVertex(nextVertex);
-            conversationsRepostiory.save(conversation);
+            response.setSuccessStatus(HttpStatus.ACCEPTED);
         } catch (Exception e) {
-            Logger.error(logprefix, logLocation, "Error processing request params", "", e);
+            Logger.error(logprefix, logLocation, "Error processing request ", "", e);
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -115,36 +97,24 @@ public class CallbackController {
             @RequestParam(name = "senderId", required = true) String senderId,
             @RequestParam(name = "refrenceId", required = true) String refrenceId,
             @RequestBody(required = true) RequestPayload requestBody) {
-        String logprefix = senderId;
+         String logprefix = senderId;
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         HttpReponse response = new HttpReponse(request.getRequestURI());
+
         Logger.info(logprefix, logLocation, "queryString: " + request.getQueryString(), "");
         if (null != requestBody) {
             Logger.info(logprefix, logLocation, "body: " + requestBody.toString(), "");
         }
+
         try {
             Conversation conversation = conversationHandler.getConversation(senderId, refrenceId);
             Logger.info(logprefix, logLocation, "conversationId: " + conversation.getId(), "");
 
-            Vertex nextVertex = conversationHandler.getNextVertex(conversation, requestBody.getData());
-            String url = "";
+            conversation = conversationHandler.processConversastion(conversation, requestBody);
 
-            List<String> recipients = new ArrayList<>();
-            recipients.add(senderId);
-            PushMessage pushMessage = nextVertex.getPushMessage(conversation.getData(), recipients, logprefix);
-            response.setData(pushMessage);
-            if (VertexType.MENU_MESSAGE == nextVertex.getInfo().getType()) {
-                url = requestBody.getCallbackUrl() + "callback/pushMenuMessage";
-            }
-
-            if (VertexType.TEXT_MESSAGE == nextVertex.getInfo().getType()) {
-                url = requestBody.getCallbackUrl() + "callback/pushSimpleMessage";
-            }
-            messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), requestBody.getIsGuest());
-            conversation.shiftVertex(nextVertex);
-            conversationsRepostiory.save(conversation);
+            response.setSuccessStatus(HttpStatus.ACCEPTED);
         } catch (Exception e) {
-            Logger.error(logprefix, logLocation, "Error processing request params", "", e);
+            Logger.error(logprefix, logLocation, "Error processing request ", "", e);
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(response);

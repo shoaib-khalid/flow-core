@@ -28,8 +28,8 @@ public class SwaggerConfig {
     }
 
     private ApiInfo apiInfo() {
-        return new ApiInfoBuilder().title("KBOT Core for hanlding input events and replying to user.")
-                .description("Manages messages.")
+        return new ApiInfoBuilder().title("KBOT flow-core.")
+                .description("Manages conversations.")
                 .termsOfServiceUrl("not added yet")
                 .license("not added yet")
                 .licenseUrl("").version("1.0").build();

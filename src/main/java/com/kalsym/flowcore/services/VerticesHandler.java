@@ -56,7 +56,7 @@ public class VerticesHandler {
      * @param inputData Data to be processed. Can be
      * @return Next vertex.
      */
-    public Vertex getNextVertex(Conversation conversation, Vertex vertex, String inputData) {
+    public Vertex processVertex(Conversation conversation, Vertex vertex, String inputData) {
 
         String logprefix = conversation.getSenderId();
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
@@ -69,8 +69,13 @@ public class VerticesHandler {
             step = getStepByAction(conversation, vertex);
         }
 
-        if (VertexType.MENU_MESSAGE == vertex.getInfo().getType()) {
+        if (VertexType.MENU_MESSAGE == vertex.getInfo().getType()
+                || VertexType.IMMEDIATE_MENU_MESSAGE == vertex.getInfo().getType()) {
             step = getStepByMenu(vertex, conversation, inputData);
+        }
+
+        if (VertexType.IMMEDIATE_TEXT_MESSAGE == vertex.getInfo().getType()) {
+            step = getStepByText(conversation, vertex, inputData);
         }
 
         if (VertexType.TEXT_MESSAGE == vertex.getInfo().getType()) {
@@ -85,13 +90,6 @@ public class VerticesHandler {
         Logger.info(logprefix, logLocation, "nextVertexId: " + step.getTargetId(), "");
         Optional<Vertex> vertexOpt = verticesRepostiory.findById(step.getTargetId());
         nextVertex = vertexOpt.get();
-
-        if (VertexType.ACTION == nextVertex.getInfo().getType()
-                || VertexType.CONDITION == nextVertex.getInfo().getType()) {
-            Logger.info(logprefix, logLocation, "recursing through " + nextVertex.getInfo().getType() + " type", "");
-
-            nextVertex = getNextVertex(conversation, nextVertex, inputData);
-        }
 
         return nextVertex;
     }
@@ -238,7 +236,7 @@ public class VerticesHandler {
                 for (ExternalRequestResponseMapping errm : responseMappings) {
 
                     try {
-                        String value = jsonContext.read(errm.getPath())+"";
+                        String value = jsonContext.read(errm.getPath()) + "";
                         conversation.setVariableValue(errm.getDataVariable(), value);
                         Logger.info(logprefix, logLocation, "saved " + errm.getDataVariable() + ": " + value, "");
                     } catch (Exception e) {

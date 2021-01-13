@@ -157,7 +157,7 @@ public class Vertex {
 
         }
 
-        pushMessage.setUrl("https://www.telenor.com.pk/static/2020/08/Family-Plans-Banner-Landing-Page-780x425-1.png");
+        pushMessage.setUrl("https://www.techopedia.com/images/uploads/6e13a6b3-28b6-454a-bef3-92d3d5529007.jpeg");
         pushMessage.setUrlType("IMAGE");
 
         pushMessage.setRecipientIds(recipients);
