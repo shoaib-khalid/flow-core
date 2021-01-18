@@ -1,7 +1,6 @@
 package com.kalsym.flowcore.controllers;
 
 import com.kalsym.flowcore.daos.models.*;
-import com.kalsym.flowcore.models.pushmessages.*;
 import com.kalsym.flowcore.daos.repositories.ConversationsRepostiory;
 import com.kalsym.flowcore.daos.repositories.VerticesRepostiory;
 import com.kalsym.flowcore.models.*;
@@ -16,12 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.kalsym.flowcore.daos.repositories.FlowsRepostiory;
-import com.kalsym.flowcore.models.enums.VertexType;
 import com.kalsym.flowcore.services.ConversationHandler;
-import com.kalsym.flowcore.services.MessageSender;
 import com.kalsym.flowcore.services.VerticesHandler;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
@@ -55,7 +50,7 @@ public class CallbackController {
      * @param requestBody
      * @return
      */
-    @PostMapping(path = {"/postaback/", "/postaback"}, name = "callback-postback-post")
+    @PostMapping(path = {"/postaback/"}, name = "callback-postback-post")
     public ResponseEntity<HttpReponse> postback(HttpServletRequest request,
             @RequestParam(name = "senderId", required = true) String senderId,
             @RequestParam(name = "refrenceId", required = true) String refrenceId,
@@ -92,7 +87,7 @@ public class CallbackController {
      * @param requestBody
      * @return
      */
-    @PostMapping(path = {"/message/", "/message"}, name = "callback-message-post")
+    @PostMapping(path = {"/message/"}, name = "callback-message-post")
     public ResponseEntity<HttpReponse> message(HttpServletRequest request,
             @RequestParam(name = "senderId", required = true) String senderId,
             @RequestParam(name = "refrenceId", required = true) String refrenceId,

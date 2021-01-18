@@ -1,5 +1,6 @@
 package com.kalsym.flowcore.configs;
 
+import com.kalsym.flowcore.VersionHolder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import springfox.documentation.builders.ApiInfoBuilder;
@@ -29,9 +30,10 @@ public class SwaggerConfig {
 
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder().title("KBOT flow-core.")
-                .description("Manages conversations.")
-                .termsOfServiceUrl("not added yet")
-                .license("not added yet")
-                .licenseUrl("").version("1.0").build();
+                .description("Manages conversations. Please read provided docs for detailed description.\n"
+                        + "https://www.dropbox.com/s/qukb6gmmf1dg0wj/KBot%20Technical%20Specification%20Document.docx?dl=0")
+                .termsOfServiceUrl("http://www.apache.org/licenses/LICENSE-2.0")
+                .license("Apache 2.0")
+                .licenseUrl("http://www.apache.org/licenses/LICENSE-2.0").version(VersionHolder.VERSION).build();
     }
 }
