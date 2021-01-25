@@ -18,7 +18,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Setter
 @Document
 public class Conversation {
-    
+
     @Id
     private String id;
 
@@ -26,50 +26,67 @@ public class Conversation {
      *
      */
     private Data data;
-    
+
     @CreatedDate
     private Date createdDate;
     @LastModifiedDate
     private Date lastModifiedDate;
-    
+
     private String senderId;
     private String refrenceId;
-    
+
     private String flowId;
-    
+
     public void shiftVertex(String vertexId) {
-        
+
         if (null == this.data) {
             this.data = new Data();
         }
-        
+
         data.setCurrentVertexId(vertexId);
     }
-    
+
     public void shiftVertex(Vertex vertex) {
-        
+
         if (null == this.data) {
             this.data = new Data();
         }
-        
+
         data.setCurrentVertexId(vertex.getId());
         this.flowId = vertex.getFlowId();
     }
-    
+
     public String getVariableValue(String variableName) {
         if (null == this.data) {
             this.data = new Data();
         }
-        
+
         return data.getVariableValue(variableName);
     }
-    
+
     public void setVariableValue(String variableName, String value) {
         if (null == this.data) {
             this.data = new Data();
         }
-        
+
         data.setVariableValue(variableName, value);
-        
+
+    }
+
+    public void setIsGuest(Boolean isGuest) {
+        if (null == this.data) {
+            this.data = new Data();
+        }
+
+        data.setIsGuest(isGuest);
+    }
+
+    public Boolean getIsGuest(Boolean isGuest) {
+        if (null == this.data) {
+            this.data = new Data();
+            return false;
+        }
+
+        return data.getIsGuest();
     }
 }

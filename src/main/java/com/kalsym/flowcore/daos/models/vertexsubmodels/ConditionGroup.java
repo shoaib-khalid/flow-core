@@ -1,5 +1,6 @@
 package com.kalsym.flowcore.daos.models.vertexsubmodels;
 
+import com.kalsym.flowcore.VersionHolder;
 import com.kalsym.flowcore.models.enums.MatchOperator;
 import com.kalsym.flowcore.utils.Logger;
 import lombok.Getter;
@@ -20,7 +21,6 @@ public class ConditionGroup {
 
     public boolean match(String data) {
         String logprefix = "";
-        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
 
         String localValue = this.value;
 
@@ -29,22 +29,15 @@ public class ConditionGroup {
             data = data.toUpperCase();
         }
 
-//        LogUtil.info(logprefix, logLocation, "caseSensitive: " + caseSensitive, "");
-//        Logger.info(logprefix, logLocation, "value: " + localValue + " data: " + data, "");
-        Logger.info(logprefix, logLocation, "match: " + match, "");
-        //       Logger.info(logprefix, logLocation, "MatchOperator.IS == match: " + (MatchOperator.IS == match), "");
-
+        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "match: " + match);
         if (MatchOperator.IS == match) {
-            Logger.info(logprefix, logLocation, "IS: " + data.equalsIgnoreCase(localValue), "");
-
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "IS: " + data.equalsIgnoreCase(localValue));
             return data.equalsIgnoreCase(localValue);
         } else if (MatchOperator.STARTS == match) {
-//            LogUtil.info(logprefix, logLocation, "STARTS: " + data.startsWith(localValue), "");
-
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "STARTS: " + data.startsWith(localValue));
             return data.startsWith(localValue);
         } else if (MatchOperator.ENDS == match) {
-//            LogUtil.info(logprefix, logLocation, "ENDS: " + data.endsWith(localValue), "");
-
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "ENDS: " + data.endsWith(localValue));
             return data.endsWith(localValue);
 
         } else if (MatchOperator.GREATER_THAN == match || MatchOperator.LESS_THAN == match) {
@@ -53,17 +46,15 @@ public class ConditionGroup {
                 long longData = Long.parseLong(data);
 
                 if (MatchOperator.GREATER_THAN == match) {
-                    Logger.info(logprefix, logLocation, "GREATER_THAN: " + (longData > longVal), "");
-
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "GREATER_THAN: " + (longData > longVal));
                     return longData > longVal;
                 } else if (MatchOperator.LESS_THAN == match) {
-                    Logger.info(logprefix, logLocation, "LESS_THAN: " + (longData < longVal), "");
-
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "LESS_THAN: " + (longData < longVal));
                     return longData < longVal;
                 }
 
             } catch (NumberFormatException e) {
-                Logger.error(logprefix, logLocation, "Error doing comparison", "", e);
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "Error doing comparison", e);
                 return false;
             }
         }

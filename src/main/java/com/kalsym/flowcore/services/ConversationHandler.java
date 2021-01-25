@@ -1,7 +1,8 @@
 package com.kalsym.flowcore.services;
 
+import com.kalsym.flowcore.VersionHolder;
 import com.kalsym.flowcore.daos.models.*;
-import com.kalsym.flowcore.daos.models.conversationsubmodels.*;
+import com.kalsym.flowcore.models.*;
 import com.kalsym.flowcore.daos.repositories.ConversationsRepostiory;
 import com.kalsym.flowcore.daos.repositories.FlowsRepostiory;
 import com.kalsym.flowcore.daos.repositories.VerticesRepostiory;
@@ -11,8 +12,8 @@ import com.kalsym.flowcore.models.pushmessages.PushMessage;
 import com.kalsym.flowcore.utils.Logger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.data.domain.Example;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class ConversationHandler {
+
 
     @Autowired
     private ConversationsRepostiory conversationsRepostiory;
@@ -72,17 +74,17 @@ public class ConversationHandler {
         List<Conversation> conversationList = conversationsRepostiory.findAll(convoExample, Sort.by("lastModifiedDate").descending());
 
         if (conversationList.size() > 0) {
-            Logger.info(logprefix, logLocation, "conversation found", "");
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "conversation found");
             return conversationList.get(0);
         }
-        Logger.info(logprefix, logLocation, "conversation  not found", "");
+        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "conversation  not found");
 
         Conversation newConversation = new Conversation();
 
         newConversation.setSenderId(senderId);
         newConversation.setRefrenceId(refrenceId);
         newConversation.setFlowId(refrenceId);
-        Logger.info(logprefix, logLocation, "created conversation", "");
+        Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "created conversation");
 
         return conversationsRepostiory.save(newConversation);
 
@@ -102,22 +104,25 @@ public class ConversationHandler {
         String vertexId = null;
 
         if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
-            Logger.info(logprefix, logLocation, "current vertex found", "");
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "current vertex found");
+
             vertexId = conversation.getData().getCurrentVertexId();
         } else {
-            Logger.info(logprefix, logLocation, "latest vertex not found", "");
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "latest vertex not found");
+
             Optional<Flow> flowOpt = flowsRepostiory.findById(conversation.getFlowId());
             vertexId = flowOpt.get().getTopVertexId();
-            Logger.info(logprefix, logLocation, "flow found with id: " + conversation.getFlowId(), "");
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flow found with id: " + conversation.getFlowId());
+
             conversation.shiftVertex(vertexId);
             conversationsRepostiory.save(conversation);
-            Logger.info(logprefix, logLocation, "updated currentVertexId: " + vertexId, "");
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "updated currentVertexId: " + vertexId);
         }
 
         Optional<Vertex> vertexOpt = verticesRepostiory.findById(vertexId);
 
         if (!vertexOpt.isPresent()) {
-            Logger.info(logprefix, logLocation, "vertex not found with id: " + vertexId, "");
+            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertexId);
             throw new NotFoundException();
         } else {
             return vertexOpt.get();
@@ -132,70 +137,92 @@ public class ConversationHandler {
      * @param conversation
      * @param requestBody
      * @return Next vertex.
+     * @throws java.lang.InterruptedException
      */
-    public Conversation processConversastion(Conversation conversation, RequestPayload requestBody) {
+    public Conversation processConversastion(Conversation conversation, RequestPayload requestBody) throws InterruptedException {
         String inputData = requestBody.getData();
         String logprefix = conversation.getSenderId();
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         Vertex vertex = null;
-        Vertex nextVertex = null;
+        //Vertex nextVertex = null;
+        Dispatch dispatch;
         if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
-            Logger.info(logprefix, logLocation, "currentVertexId: " + conversation.getData().getCurrentVertexId(), "");
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "currentVertexId: " + conversation.getData().getCurrentVertexId());
 
             vertex = verticesRepostiory.findById(conversation.getData().getCurrentVertexId()).get();
-            nextVertex = verticesHandler.processVertex(conversation, vertex, inputData);
+            dispatch = verticesHandler.processVertex(conversation, vertex, inputData);
+
         } else {
             //if conversation does not have latestVertexId consider it a new 
             //conversation and attach flow's topVertexId to conversation's 
             //latestVertexId
-            Logger.info(logprefix, logLocation, "currentVertexId no present", "");
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "currentVertexId no present");
 
             Flow flow = flowsRepostiory.findById(conversation.getRefrenceId()).get();
-            nextVertex = vertex = verticesRepostiory.findById(flow.getTopVertexId()).get();
-            Logger.info(logprefix, logLocation, "assigned currentVertexId: " + vertex.getId(), "");
+            vertex = verticesRepostiory.findById(flow.getTopVertexId()).get();
+            dispatch = new Dispatch(vertex, conversation.getData(), logprefix);
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "assigned currentVertexId: " + vertex.getId());
 
+            conversation.setIsGuest(requestBody.getIsGuest());
         }
 
-        if (VertexType.MENU_MESSAGE == nextVertex.getInfo().getType()
-                || VertexType.TEXT_MESSAGE == nextVertex.getInfo().getType()
-                || VertexType.HANDOVER == nextVertex.getInfo().getType()
-                || VertexType.IMMEDIATE_TEXT_MESSAGE == nextVertex.getInfo().getType()
-                || VertexType.IMMEDIATE_MENU_MESSAGE == nextVertex.getInfo().getType()) {
+        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "dispatch.getType(): " + dispatch.getType());
+
+        if (null != dispatch.getVariables()) {
+            for (Map.Entry<String, String> mapElement : dispatch.getVariables().entrySet()) {
+                String key = mapElement.getKey();
+                String value = mapElement.getValue();
+                conversation.setVariableValue(key, value);
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "saved " + key + ": " + value);
+            }
+        }
+        if (VertexType.MENU_MESSAGE == dispatch.getType()
+                || VertexType.TEXT_MESSAGE == dispatch.getType()
+                || VertexType.HANDOVER == dispatch.getType()
+                || VertexType.IMMEDIATE_TEXT_MESSAGE == dispatch.getType()) {
             List<String> recipients = new ArrayList<>();
             recipients.add(conversation.getSenderId());
-            PushMessage pushMessage = nextVertex.getPushMessage(conversation.getData(), recipients, logprefix);
+            PushMessage pushMessage = dispatch.generatePushMessage(conversation.getData(), logprefix);
+            pushMessage.setRecipientIds(recipients);
 
-            String url = "";
-            if (VertexType.MENU_MESSAGE == nextVertex.getInfo().getType()
-                    || VertexType.IMMEDIATE_MENU_MESSAGE == nextVertex.getInfo().getType()) {
-                url = requestBody.getCallbackUrl() + "callback/pushMenuMessage";
-            }
-
-            if (VertexType.TEXT_MESSAGE == nextVertex.getInfo().getType() 
-                    || VertexType.IMMEDIATE_TEXT_MESSAGE == nextVertex.getInfo().getType()) {
-                url = requestBody.getCallbackUrl() + "callback/pushSimpleMessage";
-            }
-
-            if (VertexType.HANDOVER == nextVertex.getInfo().getType()) {
-                url = requestBody.getCallbackUrl() + "callback/passConversationToCustomerService";
-
-            }
             try {
-                messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), requestBody.getIsGuest());
-                conversation.shiftVertex(nextVertex.getId());
-                conversationsRepostiory.save(conversation);
+                String url = "";
+                if (VertexType.MENU_MESSAGE == dispatch.getType()) {
+                    url = requestBody.getCallbackUrl() + "callback/menumessage/push/";
+                    messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), conversation.getIsGuest(Boolean.TRUE));
+                    conversation.shiftVertex(dispatch.getStepId());
+                    conversationsRepostiory.save(conversation);
+                }
+
+                if (VertexType.TEXT_MESSAGE == dispatch.getType()
+                        || VertexType.IMMEDIATE_TEXT_MESSAGE == dispatch.getType()
+                        || VertexType.HANDOVER == dispatch.getType()) {
+                    url = requestBody.getCallbackUrl() + "callback/textmessage/push/";
+                    messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), conversation.getIsGuest(Boolean.TRUE));
+                    conversation.shiftVertex(dispatch.getStepId());
+                    conversationsRepostiory.save(conversation);
+                }
+
+                if (VertexType.HANDOVER == dispatch.getType()) {
+                    url = requestBody.getCallbackUrl() + "callback/conversation/pass/";
+                    messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), conversation.getIsGuest(Boolean.TRUE));
+                    conversation.shiftVertex(dispatch.getStepId());
+                    conversationsRepostiory.save(conversation);
+
+                }
+
             } catch (Exception e) {
-                Logger.error(logprefix, logLocation, "Error sending message", "", e);
+                Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "Error sending message", e);
+
             }
 
         }
 
-        if (VertexType.ACTION == nextVertex.getInfo().getType()
-                || VertexType.CONDITION == nextVertex.getInfo().getType()
-                || VertexType.IMMEDIATE_TEXT_MESSAGE == nextVertex.getInfo().getType()
-                || VertexType.IMMEDIATE_MENU_MESSAGE == nextVertex.getInfo().getType()) {
-            Logger.info(logprefix, logLocation, "recursing through " + nextVertex.getInfo().getType() + " type", "");
-            conversation.shiftVertex(nextVertex.getId());
+        if (VertexType.ACTION == dispatch.getType()
+                || VertexType.CONDITION == dispatch.getType()
+                || VertexType.IMMEDIATE_TEXT_MESSAGE == dispatch.getType()) {
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "recursing through " + dispatch.getType() + " type");
+            conversation.shiftVertex(dispatch.getStepId());
             conversationsRepostiory.save(conversation);
             conversation = processConversastion(conversation, requestBody);
         }

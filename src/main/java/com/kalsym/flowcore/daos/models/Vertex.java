@@ -1,5 +1,6 @@
 package com.kalsym.flowcore.daos.models;
 
+import com.kalsym.flowcore.VersionHolder;
 import com.kalsym.flowcore.daos.models.conversationsubmodels.Data;
 import com.kalsym.flowcore.daos.models.vertexsubmodels.*;
 import com.kalsym.flowcore.models.enums.VertexType;
@@ -31,15 +32,14 @@ public class Vertex {
 
     private Info info;
 
-    private Validation validation;
-
     /**
-     * Two variables from below will be null and only one will be assigned a
-     * value
+     * Below will be null and only one will be assigned a value
      */
+    private Validation validation;
     private List<Condition> conditions;
     private List<Action> actions;
     private List<Option> options;
+    private Handover handover;
 
     private Step step;
 
@@ -103,10 +103,81 @@ public class Vertex {
      * @param refId
      * @return PushMessage
      */
-    public PushMessage getPushMessage(Data data, List<String> recipients, String refId) {
+//    public PushMessage getPushMessage(Data data, List<String> recipients, String refId) {
+//        String logprefix = refId;
+//        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
+//        Logger.info(logprefix, logLocation, "vertexType: " + this.getInfo().getType(), "");
+//
+//        PushMessage pushMessage = new PushMessage();
+//
+//        pushMessage.setTitle(this.info.getTitle());
+//        pushMessage.setSubTitle(this.info.getText());
+//
+//        if (VertexType.MENU_MESSAGE == this.getInfo().getType()) {
+//            List<MenuItem> menuItems = new ArrayList<>();
+//            for (Option option : this.options) {
+//                MenuItem menuItem = null;
+//                if (data == null) {
+//                    menuItem = option.getMenuItem(null);
+//                } else {
+//                    menuItem = option.getMenuItem(data.getVariables());
+//                }
+//
+//                Logger.info(logprefix, logLocation, "menuTile: " + menuItem.getTitle(), "");
+//                Logger.info(logprefix, logLocation, "menuPayload: " + menuItem.getPayload(), "");
+//
+//                if (menuItem.getPayload() != null && menuItem.getTitle() != null) {
+//                    menuItems.add(menuItem);
+//                }
+//            }
+//
+//            if (null == this.options || options.isEmpty()) {
+//                MenuItem menuItem = new MenuItem();
+//                menuItem.setTitle("Default");
+//                menuItem.setType("postback");
+//                menuItem.setPayload(this.step.getTargetId());
+//                menuItems.add(menuItem);
+//            }
+//
+//            if (null == data) {
+//                pushMessage.setSubTitle(insertDataVaiables(null));
+//            } else {
+//                pushMessage.setSubTitle(insertDataVaiables(data.getVariables()));
+//            }
+//            pushMessage.setMessage(null);
+//            pushMessage.setMenuItems(menuItems);
+//        }
+//
+//        if (VertexType.TEXT_MESSAGE == this.info.getType()
+//                || VertexType.IMMEDIATE_TEXT_MESSAGE == this.info.getType()
+//                || VertexType.HANDOVER == this.info.getType()) {
+//            if (null == data) {
+//                pushMessage.setMessage(insertDataVaiables(null));
+//            } else {
+//                pushMessage.setMessage(insertDataVaiables(data.getVariables()));
+//            }
+//
+//        }
+//
+//        pushMessage.setUrl("https://www.techopedia.com/images/uploads/6e13a6b3-28b6-454a-bef3-92d3d5529007.jpeg");
+//        pushMessage.setUrlType("IMAGE");
+//
+//        pushMessage.setRecipientIds(recipients);
+//        pushMessage.setRefId(refId);
+//
+//        return pushMessage;
+//    }
+    /**
+     * Generates push message for the vertex.
+     *
+     * @param data
+     * @param recipients
+     * @param refId
+     * @return PushMessage
+     */
+    public PushMessage getPushMessage(Data data, String refId) {
         String logprefix = refId;
         String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
-        Logger.info(logprefix, logLocation, "vertexType: " + this.getInfo().getType(), "");
 
         PushMessage pushMessage = new PushMessage();
 
@@ -122,9 +193,6 @@ public class Vertex {
                 } else {
                     menuItem = option.getMenuItem(data.getVariables());
                 }
-
-                Logger.info(logprefix, logLocation, "menuTile: " + menuItem.getTitle(), "");
-                Logger.info(logprefix, logLocation, "menuPayload: " + menuItem.getPayload(), "");
 
                 if (menuItem.getPayload() != null && menuItem.getTitle() != null) {
                     menuItems.add(menuItem);
@@ -148,7 +216,8 @@ public class Vertex {
             pushMessage.setMenuItems(menuItems);
         }
 
-        if (VertexType.TEXT_MESSAGE == this.info.getType()) {
+        if (VertexType.TEXT_MESSAGE == this.info.getType()
+                || VertexType.IMMEDIATE_TEXT_MESSAGE == this.info.getType()) {
             if (null == data) {
                 pushMessage.setMessage(insertDataVaiables(null));
             } else {
@@ -157,10 +226,18 @@ public class Vertex {
 
         }
 
+        if (VertexType.HANDOVER == this.info.getType()) {
+            if (null == data) {
+                pushMessage.setMessage(insertDataVaiables(null));
+            } else {
+                pushMessage.setMessage(insertDataVaiables(data.getVariables()));
+            }
+        }
+
         pushMessage.setUrl("https://www.techopedia.com/images/uploads/6e13a6b3-28b6-454a-bef3-92d3d5529007.jpeg");
         pushMessage.setUrlType("IMAGE");
 
-        pushMessage.setRecipientIds(recipients);
+        //pushMessage.setRecipientIds(recipients);
         pushMessage.setRefId(refId);
 
         return pushMessage;

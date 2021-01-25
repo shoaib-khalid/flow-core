@@ -1,7 +1,6 @@
 package com.kalsym.flowcore;
 
 import com.kalsym.flowcore.utils.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -23,20 +22,19 @@ public class FlowcoreApplication {
     @Value("${build.version:not-known}")
     String version;
 
-
     @Bean
     CommandLineRunner lookup(ApplicationContext context) {
         return args -> {
             VersionHolder.VERSION = version;
-            Logger.info("", "", "\n"
+
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "", "\n"
                     + "  ______ _                  _____               \n"
                     + " |  ____| |                / ____|              \n"
                     + " | |__  | | _____      __ | |     ___  _ __ ___ \n"
                     + " |  __| | |/ _ \\ \\ /\\ / / | |    / _ \\| '__/ _ \\\n"
                     + " | |    | | (_) \\ V  V /  | |___| (_) | | |  __/\n"
                     + " |_|    |_|\\___/ \\_/\\_/    \\_____\\___/|_|  \\___|\n"
-                    + " :: com.kalsym ::              (v" + VersionHolder.VERSION + ")", "");
-
+                    + " :: com.kalsym ::              (v" + VersionHolder.VERSION + ")");
         };
     }
 

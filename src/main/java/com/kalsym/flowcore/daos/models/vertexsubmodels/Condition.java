@@ -21,8 +21,7 @@ public class Condition {
     private Step step;
 
     public Step match(Data data) {
-        String logprefix = "";
-        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
+
 
         Step step = null;
 
@@ -32,8 +31,6 @@ public class Condition {
 
             String variableName = conditionGroup.getField();
             String variableValue = variables.get(variableName);
-
-            Logger.info(logprefix, logLocation, "operator: " + operator, "");
 
             if (ConditionOperator.OR == operator) {
                 if (conditionGroup.match(variableValue)) {
