@@ -9,4 +9,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
  */
 public interface FlowsRepostiory extends MongoRepository<Flow, String> {
 
+    public Flow findByBotId(String botId);
 }

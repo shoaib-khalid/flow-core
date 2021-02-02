@@ -22,7 +22,6 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class VerticesHandler {
 
-
     @Autowired
     private VerticesRepostiory verticesRepostiory;
 
@@ -97,25 +96,34 @@ public class VerticesHandler {
 
         Dispatch dispatch = null;
         Validation validation = vertex.getValidation();
+        try {
+            Pattern p = Pattern.compile(validation.getRegex());
+            Matcher m = p.matcher(text);
 
-        Pattern p = Pattern.compile(validation.getRegex());
-        Matcher m = p.matcher(text);
+            if (m.matches()) {
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "validation success for data: " + text);
 
-        if (m.matches()) {
-            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "validation success for data: " + text);
+                Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
 
+                dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix);
+                dispatch.setVariableValue(vertex.getDataVariable(), text);
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "variable added " + vertex.getDataVariable() + ": " + text);
+                return dispatch;
+            } else {
+                Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "validation failed for data: " + text);
+                vertex.getInfo().setText(vertex.getValidation().getRetry().getMessage());
+                dispatch = new Dispatch(vertex, conversation.getData(), logprefix);
+                return dispatch;
+            }
+        } catch (Exception e) {
+            Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "validation exception " + text, e);
             Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
-
             dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix);
             dispatch.setVariableValue(vertex.getDataVariable(), text);
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "variable added " + vertex.getDataVariable() + ": " + text);
             return dispatch;
-        } else {
-            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "validation failed for data: " + text);
-            vertex.getInfo().setText(vertex.getValidation().getRetry().getMessage());
-            dispatch = new Dispatch(vertex, conversation.getData(), logprefix);
-            return dispatch;
         }
+
     }
 
     /**

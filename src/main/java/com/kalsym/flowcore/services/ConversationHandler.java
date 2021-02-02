@@ -30,7 +30,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class ConversationHandler {
 
-
     @Autowired
     private ConversationsRepostiory conversationsRepostiory;
 
@@ -142,7 +141,6 @@ public class ConversationHandler {
     public Conversation processConversastion(Conversation conversation, RequestPayload requestBody) throws InterruptedException {
         String inputData = requestBody.getData();
         String logprefix = conversation.getSenderId();
-        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         Vertex vertex = null;
         //Vertex nextVertex = null;
         Dispatch dispatch;
@@ -157,6 +155,10 @@ public class ConversationHandler {
             //conversation and attach flow's topVertexId to conversation's 
             //latestVertexId
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "currentVertexId no present");
+
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "total flows: " + flowsRepostiory.findAll().size());
+
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "total flows: " + flowsRepostiory.findAll().size());
 
             Flow flow = flowsRepostiory.findById(conversation.getRefrenceId()).get();
             vertex = verticesRepostiory.findById(flow.getTopVertexId()).get();
