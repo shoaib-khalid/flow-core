@@ -56,20 +56,20 @@ public class InboundController {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "conversationId: " + conversation.getId());
         } catch (Exception e) {
             Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "Error retrieving conversation", e);
-            response.setSuccessStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-
+            response.setSuccessStatus(HttpStatus.OK, e.getMessage());
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         }
 
         try {
-
             conversation = conversationHandler.processConversastion(conversation, requestBody);
             response.setSuccessStatus(HttpStatus.ACCEPTED);
         } catch (InterruptedException e) {
             Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "Error processiong conversation", e);
-            response.setSuccessStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            response.setSuccessStatus(HttpStatus.OK, e.getMessage());
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         }
+
+        response.setSuccessStatus(HttpStatus.OK);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

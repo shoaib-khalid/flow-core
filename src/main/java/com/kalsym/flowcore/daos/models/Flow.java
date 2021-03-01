@@ -1,6 +1,7 @@
 package com.kalsym.flowcore.daos.models;
 
 import java.util.Date;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -31,7 +32,7 @@ public class Flow {
     @LastModifiedDate
     public Date lastModifiedDate;
 
-    public String botId;
+    public List<String> botIds;
 
     public String topVertexId;
 

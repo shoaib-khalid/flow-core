@@ -5,6 +5,7 @@ import com.kalsym.flowcore.daos.models.*;
 import com.kalsym.flowcore.models.*;
 import com.kalsym.flowcore.daos.repositories.FlowsRepostiory;
 import com.kalsym.flowcore.utils.Logger;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
@@ -42,10 +43,23 @@ public class FlowsController {
 
         response.setSuccessStatus(HttpStatus.OK);
 
-        Flow flow = flowsRepository.findByBotId(botId);
-        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "bot flow: " + flow);
+        String[] botIds = {botId};
+        List<Flow> flows = flowsRepository.findByBotIds(botId);
+        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "total flows: " + flows.size());
 
-        response.setData(flowsRepository.findByBotId(botId));
+        if (flows.isEmpty()) {
+            response.setErrorStatus(HttpStatus.NOT_FOUND, "No flows foud with match botId");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        Flow flow = flows.get(0);
+        if (null == flow) {
+            response.setErrorStatus(HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+
+        }
+        flow.setId(botId);
+        response.setData(flow);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

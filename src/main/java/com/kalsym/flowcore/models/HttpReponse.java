@@ -39,6 +39,11 @@ public class HttpReponse {
         this.message = status.getReasonPhrase();
     }
 
+    public void setSuccessStatus(HttpStatus status, String message) {
+        this.status = status.value();
+        this.message = message;
+    }
+
     /**
      * *
      * Sets status and custom message.

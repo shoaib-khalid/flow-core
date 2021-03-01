@@ -176,8 +176,7 @@ public class Vertex {
      * @return PushMessage
      */
     public PushMessage getPushMessage(Data data, String refId) {
-        String logprefix = refId;
-        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
+
 
         PushMessage pushMessage = new PushMessage();
 
@@ -251,7 +250,6 @@ public class Vertex {
                 String key = mapElement.getKey();
                 String value = mapElement.getValue();
                 text = text.replace("$%" + key + "$%", value);
-
             }
         }
         return text;

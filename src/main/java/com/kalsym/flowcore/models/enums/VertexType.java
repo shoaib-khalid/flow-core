@@ -10,5 +10,6 @@ public enum VertexType {
     CONDITION,
     MENU_MESSAGE,
     HANDOVER,
+    WIZARD,
     IMMEDIATE_TEXT_MESSAGE
 }

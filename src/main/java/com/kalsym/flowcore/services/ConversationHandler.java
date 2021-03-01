@@ -57,7 +57,6 @@ public class ConversationHandler {
     public Conversation getConversation(String senderId, String refrenceId) throws Exception {
 
         String logprefix = senderId;
-        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
 
         Conversation searchConvo = new Conversation();
         searchConvo.setSenderId(senderId);
@@ -82,7 +81,7 @@ public class ConversationHandler {
 
         newConversation.setSenderId(senderId);
         newConversation.setRefrenceId(refrenceId);
-        newConversation.setFlowId(refrenceId);
+        //newConversation.setFlowId(refrenceId);
         Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "created conversation");
 
         return conversationsRepostiory.save(newConversation);
@@ -156,12 +155,37 @@ public class ConversationHandler {
             //latestVertexId
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "currentVertexId no present");
 
-            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "total flows: " + flowsRepostiory.findAll().size());
 
-            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "total flows: " + flowsRepostiory.findAll().size());
+            String[] botIds = {conversation.getRefrenceId()};
+            List<Flow> flows = flowsRepostiory.findByBotIds(conversation.getRefrenceId());
 
-            Flow flow = flowsRepostiory.findById(conversation.getRefrenceId()).get();
-            vertex = verticesRepostiory.findById(flow.getTopVertexId()).get();
+            if (flows.isEmpty()) {
+                Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "no flow with botId: " + conversation.getRefrenceId());
+                return conversation;
+            }
+            Flow flow = flows.get(0);
+
+            if (null == flow) {
+                Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "no flow with botId: " + conversation.getRefrenceId());
+                return conversation;
+            }
+
+            if (null == flow.getTopVertexId()) {
+                Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flow does not have topVertexId");
+                return conversation;
+            }
+
+            conversation.setFlowId(flow.getId());
+            Optional<Vertex> optVertex = verticesRepostiory.findById(flow.getTopVertexId());
+
+            if (!optVertex.isPresent()) {
+                Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with Id: " + flow.getTopVertexId());
+                return conversation;
+            }
+            vertex = optVertex.get();
+
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flow topVertexId: " + flow.getTopVertexId());
+
             dispatch = new Dispatch(vertex, conversation.getData(), logprefix);
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "assigned currentVertexId: " + vertex.getId());
 

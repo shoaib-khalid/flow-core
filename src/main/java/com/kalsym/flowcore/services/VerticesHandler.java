@@ -40,7 +40,6 @@ public class VerticesHandler {
     public Dispatch processVertex(Conversation conversation, Vertex vertex, String inputData) {
 
         String logprefix = conversation.getSenderId();
-        String logLocation = Thread.currentThread().getStackTrace()[1].getMethodName();
         Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertexType: " + vertex.getInfo().getType());
 
         Vertex nextVertex = null;
@@ -66,6 +65,10 @@ public class VerticesHandler {
 
         if (VertexType.TEXT_MESSAGE == vertex.getInfo().getType()) {
             dispatch = getStepByText(conversation, vertex, inputData);
+        }
+
+        if (VertexType.WIZARD == vertex.getInfo().getType()) {
+            dispatch = getStepByWizard(conversation, vertex, inputData);
         }
 
         if (VertexType.CONDITION == vertex.getInfo().getType()) {
@@ -138,24 +141,30 @@ public class VerticesHandler {
 
         String logprefix = conversation.getSenderId();
 
-        JSONObject evetnObj = new JSONObject(inputData);
-        String event = evetnObj.getString("event");
+        String csrName = "";
+        String event = "";
         Dispatch dispatch = null;
+        try {
+            JSONObject evetnObj = new JSONObject(inputData);
+            event = evetnObj.getString("event");
+            csrName = evetnObj.getString("aganetName");
+        } catch (Exception e) {
+            Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "Error reading json: ", e);
+        }
 
         if (HandoverAction.LIVECHATSESSIONTAKEN.toString().equals(event.toUpperCase())) {
             vertex.getInfo().setText(vertex.getHandover().getConnectMessage());
             dispatch = new Dispatch(vertex, conversation.getData(), logprefix);
-            dispatch.setVariableValue("csrName", evetnObj.getString("aganetName"));
-            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "csrName: " + evetnObj.getString("aganetName"));
+            dispatch.setVariableValue("csrName", csrName);
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "csrName: " + csrName);
 
-        }
-
-        if (HandoverAction.FORWARDED.toString().equals(event.toUpperCase())) {
+        } else if (HandoverAction.FORWARDED.toString().equals(event.toUpperCase())) {
             vertex.getInfo().setText(vertex.getHandover().getForwardMessage());
             dispatch = new Dispatch(vertex, conversation.getData(), logprefix);
-        }
-
-        if (HandoverAction.LIVECHATSESSION.toString().equals(event.toUpperCase())) {
+        } else if (HandoverAction.LIVECHATSESSION.toString().equals(event.toUpperCase())) {
+            Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
+            dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix);
+        } else {
             Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
             dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix);
         }
@@ -206,6 +215,17 @@ public class VerticesHandler {
         return dispatch;
     }
 
+    private Dispatch getStepByWizard(Conversation conversation, Vertex vertex, String value) {
+        String logprefix = conversation.getSenderId();
+        Dispatch dispatch = null;
+
+        Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
+        dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix);
+        dispatch.setVariableValue(vertex.getDataVariable(), value);
+        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "variable added " + vertex.getDataVariable() + ": " + value);
+        return dispatch;
+    }
+
     /**
      * Returns step after passing input through options. Also save the value of
      * the chosen option.
@@ -223,7 +243,14 @@ public class VerticesHandler {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "matched " + value + ": " + option.getText());
             Vertex nextVertex = verticesRepostiory.findById(option.getStep().getTargetId()).get();
             Dispatch dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix);
-            dispatch.setVariableValue(vertex.getDataVariable(), value);
+
+            String variableValue = null;
+            if (option.getText().startsWith("$%") && option.getText().endsWith("$%")) {
+                variableValue = conversation.getData().getVariableValue(option.getText().replace("$%", ""));
+            } else {
+                variableValue = option.getText();
+            }
+            dispatch.setVariableValue(vertex.getDataVariable(), variableValue);
             return dispatch;
         }
         Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "no value matched");
