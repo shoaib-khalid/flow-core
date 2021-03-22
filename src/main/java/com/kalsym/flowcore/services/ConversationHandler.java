@@ -155,7 +155,6 @@ public class ConversationHandler {
             //latestVertexId
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "currentVertexId no present");
 
-
             String[] botIds = {conversation.getRefrenceId()};
             List<Flow> flows = flowsRepostiory.findByBotIds(conversation.getRefrenceId());
 
@@ -224,6 +223,8 @@ public class ConversationHandler {
                         || VertexType.IMMEDIATE_TEXT_MESSAGE == dispatch.getType()
                         || VertexType.HANDOVER == dispatch.getType()) {
                     url = requestBody.getCallbackUrl() + "callback/textmessage/push/";
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, " pushMessage: " + pushMessage);
+
                     messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), conversation.getIsGuest(Boolean.TRUE));
                     conversation.shiftVertex(dispatch.getStepId());
                     conversationsRepostiory.save(conversation);

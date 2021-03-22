@@ -70,11 +70,16 @@ public class ExternalRequest {
             if (DataFomat.JSON == erBody.getFormat()) {
                 String payload = erBody.getPayload();
                 httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-                if (null != data.getVariables()) {
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "payload: " + payload);
+
+                if (null != data.getVariables() && null != payload) {
+
                     HashMap<String, String> datavariables = data.getVariables();
                     for (Map.Entry<String, String> mapElement : datavariables.entrySet()) {
                         String key = mapElement.getKey();
                         String value = mapElement.getValue();
+                        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "replacing " + "$%" + key + "$%  with " + value);
+
                         payload = payload.replace("$%" + key + "$%", value);
                     }
                 }

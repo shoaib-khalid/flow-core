@@ -1,6 +1,9 @@
 package com.kalsym.flowcore.daos.models.conversationsubmodels;
 
+import com.kalsym.flowcore.VersionHolder;
+import com.kalsym.flowcore.utils.Logger;
 import java.util.HashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,10 +21,20 @@ public class Data {
     private Boolean isGuest;
 
     public String getVariableValue(String variableName) {
+        String value = null;
+//        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "", " variableName: " + variableName);
+//
+//        for (Map.Entry<String, String> mapElement : variables.entrySet()) {
+//            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "s", "mapElement.getKey(): " + mapElement.getKey() + ": " + mapElement.getValue());
+//        }
+//
+//        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "s", "variables.get(" + variableName + "): " + variables.get(variableName));
+
         if (null != variables) {
-            variables.get(variableName);
+
+            value = variables.get(variableName);
         }
-        return null;
+        return value;
     }
 
     public void setVariableValue(String variableName, String value) {

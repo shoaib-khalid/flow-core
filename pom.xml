@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.kalsym</groupId>
     <artifactId>flow-core</artifactId>
-    <version>0.0.4-alpha</version>
+    <version>1.0-Final</version>
     <name>flow-core</name>
     <description>Application for kalsym KBOT.</description>
 

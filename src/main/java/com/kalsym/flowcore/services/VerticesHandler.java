@@ -7,6 +7,7 @@ import com.kalsym.flowcore.daos.models.vertexsubmodels.*;
 import com.kalsym.flowcore.daos.repositories.VerticesRepostiory;
 import com.kalsym.flowcore.models.enums.*;
 import com.kalsym.flowcore.utils.Logger;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONObject;
@@ -244,9 +245,16 @@ public class VerticesHandler {
             Vertex nextVertex = verticesRepostiory.findById(option.getStep().getTargetId()).get();
             Dispatch dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix);
 
-            String variableValue = null;
-            if (option.getText().startsWith("$%") && option.getText().endsWith("$%")) {
-                variableValue = conversation.getData().getVariableValue(option.getText().replace("$%", ""));
+            String variableValue = option.getText();
+
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, variableValue + " starts with and ends with $%: " + (variableValue.startsWith("$%") && variableValue.endsWith("$%")));
+
+            if (variableValue.startsWith("$%") && variableValue.endsWith("$%")) {
+               
+                String varKey = variableValue.replace("$%", "");
+                variableValue = conversation.getData().getVariableValue(varKey);
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, " variableValue: " + variableValue);
+
             } else {
                 variableValue = option.getText();
             }
