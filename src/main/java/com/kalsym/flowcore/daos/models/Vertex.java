@@ -1,11 +1,9 @@
 package com.kalsym.flowcore.daos.models;
 
-import com.kalsym.flowcore.VersionHolder;
 import com.kalsym.flowcore.daos.models.conversationsubmodels.Data;
 import com.kalsym.flowcore.daos.models.vertexsubmodels.*;
 import com.kalsym.flowcore.models.enums.VertexType;
 import com.kalsym.flowcore.models.pushmessages.*;
-import com.kalsym.flowcore.utils.Logger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -51,6 +49,9 @@ public class Vertex {
     private Date lastModifiedDate;
 
     private String flowId;
+    
+    
+    private Integer isLastVertex;
 
     /**
      * Returns the step after matching the conditions inside the vertex. If non

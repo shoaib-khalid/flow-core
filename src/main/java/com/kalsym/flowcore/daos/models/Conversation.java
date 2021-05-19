@@ -2,7 +2,6 @@ package com.kalsym.flowcore.daos.models;
 
 import com.kalsym.flowcore.daos.models.conversationsubmodels.*;
 import java.util.Date;
-import java.util.HashMap;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;

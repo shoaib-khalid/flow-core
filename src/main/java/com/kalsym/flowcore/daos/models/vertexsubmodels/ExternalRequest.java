@@ -31,7 +31,7 @@ public class ExternalRequest {
 
     private String url;
     private HttpMethod httpMethod;
-    private HashMap<String, String> headers;
+    private List<ExternalRequestHeader> headers;
     private ExternalRequestBody body;
 
     private ExternalRequestReponse response;
@@ -55,14 +55,16 @@ public class ExternalRequest {
         Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "httpMethod: " + this.httpMethod);
 
         try {
-            HashMap<String, String> erHeaders = this.headers;
+            List<ExternalRequestHeader> erHeaders = this.headers;
 
             HttpHeaders httpHeaders = new HttpHeaders();
 
             if (null != erHeaders) {
-                erHeaders.entrySet().forEach(mapElement -> {
-                    httpHeaders.add(mapElement.getKey(), mapElement.getValue());
-                });
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "erHeaders: " + erHeaders);
+
+                for (ExternalRequestHeader header : erHeaders) {
+                    httpHeaders.add(header.getName(), header.getValue());
+                }
             }
 
             ExternalRequestBody erBody = this.body;
@@ -83,6 +85,8 @@ public class ExternalRequest {
                         payload = payload.replace("$%" + key + "$%", value);
                     }
                 }
+
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "headers: " + httpHeaders);
 
                 Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "payload: " + payload);
 
