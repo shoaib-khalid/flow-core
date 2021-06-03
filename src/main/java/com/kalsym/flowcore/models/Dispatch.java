@@ -22,14 +22,16 @@ public class Dispatch {
     private HashMap<String, String> variables;
     private boolean repeat;
     Vertex vertex;
+    private String referenceId;
 
     public Dispatch() {
     }
 
-    public Dispatch(Vertex vertex, Data data, String refId) {
+    public Dispatch(Vertex vertex, Data data, String refId, String referenceId) {
         this.stepId = vertex.getId();
         this.type = vertex.getInfo().getType();
         this.vertex = vertex;
+        this.referenceId = referenceId;
         pushMessage = vertex.getPushMessage(data, refId);
     }
 

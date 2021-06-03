@@ -26,4 +26,6 @@ public class PushMessage {
     private String message;
 
     private String refId;
+    
+    private String referenceId;
 }

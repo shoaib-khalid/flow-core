@@ -35,5 +35,7 @@ public class Flow {
     public List<String> botIds;
 
     public String topVertexId;
+    
+    public String storeId;
 
 }

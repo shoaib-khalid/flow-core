@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <property name="LOGS" value="/var/kalsym/logs/flow-core" />
+    <property name="LOGS" value="/var/kalsym/logs/symplified/flow-core/v1" />
 
     <property resource="application.properties"/>
 

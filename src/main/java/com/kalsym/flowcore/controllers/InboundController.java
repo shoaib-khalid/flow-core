@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.kalsym.flowcore.services.ConversationHandler;
 import com.kalsym.flowcore.utils.Logger;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  *
@@ -39,7 +41,7 @@ public class InboundController {
     public ResponseEntity<HttpReponse> postback(HttpServletRequest request,
             @RequestParam(name = "senderId", required = true) String senderId,
             @RequestParam(name = "refrenceId", required = true) String refrenceId,
-            @RequestBody(required = true) RequestPayload requestBody) {
+            @RequestBody(required = true) RequestPayload requestBody) throws Exception {
         String logprefix = senderId;
         HttpReponse response = new HttpReponse(request.getRequestURI());
 
