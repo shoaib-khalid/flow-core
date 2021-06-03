@@ -50,7 +50,7 @@ public class ConversationHandler {
     private MessageSender messageSender;
 
     @Value("${default.message:Chatbot is not configured yet.}")
-    private String deafaultMessage;
+    private String defaultMessage;
 
     /**
      * Return conversation of sender.If conversation does not exist returns a
@@ -152,13 +152,14 @@ public class ConversationHandler {
         if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "currentVertexId: " + conversation.getData().getCurrentVertexId());
 
+            //if last vertex
             if (vertex != null && vertex.getIsLastVertex() != null && vertex.getIsLastVertex() == 1) {
                 Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "currentVertex is last vertex");
                 if (conversation.getFlowId() != null) {
                     Optional<Flow> optFlow = flowsRepostiory.findById(conversation.getFlowId());
                     //TODO: add default reply
                     if (!optFlow.isPresent()) {
-                        Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "no flow with botId: " + conversation.getRefrenceId());
+                        Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "no flow with id: " + conversation.getFlowId());
                         sendDefaultMessage(conversation, requestBody.getCallbackUrl());
                         return conversation;
                     }
@@ -168,7 +169,7 @@ public class ConversationHandler {
 
                     //TODO: add default reply
                     if (!optVertex.isPresent()) {
-                        Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with Id: " + flow.getTopVertexId());
+                        Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "top vertex not found with Id: " + flow.getTopVertexId());
                         sendDefaultMessage(conversation, requestBody.getCallbackUrl());
                         return conversation;
                     }
@@ -179,19 +180,40 @@ public class ConversationHandler {
                     Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "assigned currentVertexId: " + vertex.getId());
                 }
             } else {
+                //if vertex is not last vertex
                 Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "currentVertex is not last vertex");
 
                 Optional<Vertex> optVertex = verticesRepostiory.findById(conversation.getData().getCurrentVertexId());
 
-                //TODO: add default reply
+                //check if vertez is present
                 if (!optVertex.isPresent()) {
                     Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with Id: " + conversation.getData().getCurrentVertexId());
-                    sendDefaultMessage(conversation, requestBody.getCallbackUrl());
-                    return conversation;
-                }
-                vertex = optVertex.get();
+                    //If vertex not preset shift to top vertex again
+                    Optional<Flow> optFlow = flowsRepostiory.findById(conversation.getFlowId());
+                    //TODO: add default reply
+                    if (!optFlow.isPresent()) {
+                        Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "no flow with idd: " + conversation.getFlowId());
+                        sendDefaultMessage(conversation, requestBody.getCallbackUrl());
+                        return conversation;
+                    }
 
-                dispatch = verticesHandler.processVertex(conversation, vertex, inputData);
+                    Flow flow = optFlow.get();
+                    Optional<Vertex> optTopVertex = verticesRepostiory.findById(flow.getTopVertexId());
+                    if (!optTopVertex.isPresent()) {
+                        Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "top vertex not found with Id: " + flow.getTopVertexId());
+                        sendDefaultMessage(conversation, requestBody.getCallbackUrl());
+                        return conversation;
+                    }
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "shifted comversation to top vertex with id: " + flow.getTopVertexId());
+
+                    vertex = optTopVertex.get();
+                    dispatch = new Dispatch(vertex, conversation.getData(), logprefix, conversation.getRefrenceId());
+
+                } else {
+                    vertex = optVertex.get();
+                    dispatch = verticesHandler.processVertex(conversation, vertex, inputData);
+                }
+
             }
 
         } else {
@@ -214,6 +236,7 @@ public class ConversationHandler {
 
             if (null == flow) {
                 Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "no flow with botId: " + conversation.getRefrenceId());
+                sendDefaultMessage(conversation, requestBody.getCallbackUrl());
                 return conversation;
             }
 
@@ -228,14 +251,14 @@ public class ConversationHandler {
             conversation.setFlowId(flow.getId());
             Optional<Vertex> optVertex = verticesRepostiory.findById(flow.getTopVertexId());
 
-            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "top vertex found with id: " + flow.getTopVertexId());
-
             //TODO: add default reply
             if (!optVertex.isPresent()) {
-                Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with Id: " + flow.getTopVertexId());
+                Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "top vertex not found with Id: " + flow.getTopVertexId());
                 sendDefaultMessage(conversation, requestBody.getCallbackUrl());
                 return conversation;
             }
+            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "top vertex found with id: " + flow.getTopVertexId());
+
             vertex = optVertex.get();
 
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flow topVertexId: " + flow.getTopVertexId());
@@ -321,8 +344,8 @@ public class ConversationHandler {
         recipients.add(conversation.getSenderId());
         PushMessage pushMessage = new PushMessage();
         pushMessage.setTitle("Default");
-        pushMessage.setSubTitle(deafaultMessage);
-        pushMessage.setMessage(deafaultMessage);
+        pushMessage.setSubTitle(defaultMessage);
+        pushMessage.setMessage(defaultMessage);
         pushMessage.setRecipientIds(recipients);
         pushMessage.setReferenceId(conversation.getRefrenceId());
         String url = callBackUrl + "callback/textmessage/push/";
