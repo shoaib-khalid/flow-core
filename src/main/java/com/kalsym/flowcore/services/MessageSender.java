@@ -26,7 +26,7 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class MessageSender {
 
-    public String sendMessage(PushMessage message, String url, String refId, boolean isGuest) throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException {
+    public String sendMessage(PushMessage message, String url, String refId, boolean isGuest) {
         String res = null;
         String logprefix = refId;
         try {
@@ -58,8 +58,8 @@ public class MessageSender {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "response: " + response.getBody());
             res = response.getBody();
 
-        } catch (RestClientException e) {
-            Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "response: " + e.getMessage(), e);
+        } catch (Exception e) {
+            Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "error sending message: " + e.getMessage(), e);
             res = e.getMessage();
         }
         return res;

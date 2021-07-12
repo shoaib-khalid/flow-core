@@ -14,6 +14,7 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,6 +53,9 @@ public class ConversationHandler {
     @Value("${default.message:Chatbot is not configured yet.}")
     private String defaultMessage;
 
+    @Value("${conversation.expiry:3600}")
+    int conversationExpiry;
+
     /**
      * Return conversation of sender.If conversation does not exist returns a
      * new conversation.
@@ -80,7 +84,31 @@ public class ConversationHandler {
 
         if (conversationList.size() > 0) {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "conversation found");
-            return conversationList.get(0);
+
+            Conversation conversation = conversationList.get(0);
+
+            long currentTime = (new Date()).getTime();
+
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "currentTime: " + currentTime);
+
+            long lastModifiedTime = conversation.getLastModifiedDate().getTime();
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "lastModifiedTime: " + lastModifiedTime);
+
+            long secondsSinceLastUpdate = (currentTime - lastModifiedTime) / 1000;
+
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "secondsSinceLastUpdate: " + secondsSinceLastUpdate);
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "conversationExpiry: " + conversationExpiry);
+
+            if (conversationExpiry < secondsSinceLastUpdate) {
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "conversation expired");
+
+                conversationsRepostiory.delete(conversation);
+            } else {
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "conversation not expired");
+
+                return conversationList.get(0);
+            }
+
         }
         Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "conversation  not found");
 
@@ -147,12 +175,61 @@ public class ConversationHandler {
         String inputData = requestBody.getData();
         String logprefix = conversation.getSenderId();
         Vertex vertex = null;
-        //Vertex nextVertex = null;
         Dispatch dispatch = null;
+
+        try {
+
+            if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
+                //existing conversation
+                Optional<Vertex> optVertex = getCurrentVertex(conversation);
+                if (!optVertex.isPresent()) {
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found");
+                    sendDefaultMessage(conversation, requestBody.getCallbackUrl());
+                    return conversation;
+                }
+                vertex = optVertex.get();
+                dispatch = verticesHandler.processVertex(conversation, vertex, inputData);
+            } else {
+                //new conversation
+                Optional<Vertex> optVertex = getCurrentVertex(conversation);
+                if (!optVertex.isPresent()) {
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found");
+                    sendDefaultMessage(conversation, requestBody.getCallbackUrl());
+                    return conversation;
+                }
+                vertex = optVertex.get();
+                dispatch = new Dispatch(vertex, conversation.getData(), logprefix, conversation.getRefrenceId());
+
+            }
+
+        } catch (Exception e) {
+            Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "could not get current vertex ", e);
+            sendDefaultMessage(conversation, requestBody.getCallbackUrl());
+            return conversation;
+        }
+
+        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "requestBody.getIsGuest(): " + requestBody.getIsGuest());
+        conversation.setIsGuest(requestBody.getIsGuest());
+
+        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "isLastVeretex: " + vertex.getIsLastVertex());
+
+        if (vertex.getIsLastVertex() != null && vertex.getIsLastVertex() == 1) {
+            conversation.getData().setCurrentVertexId(null);
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "cleared currentVertex from conversation");
+            return processConversastion(conversation, requestBody);
+        }
+
+        /*
+        //Vertex nextVertex = null;
         if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "currentVertexId: " + conversation.getData().getCurrentVertexId());
 
+            Optional<Vertex> optVertex = verticesRepostiory.findById(conversation.getData().getCurrentVertexId());
+
             //if last vertex
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "isLastVeretex: " + vertex.getIsLastVertex());
+
+            
             if (vertex != null && vertex.getIsLastVertex() != null && vertex.getIsLastVertex() == 1) {
                 Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "currentVertex is last vertex");
                 if (conversation.getFlowId() != null) {
@@ -165,7 +242,6 @@ public class ConversationHandler {
                     }
 
                     Flow flow = optFlow.get();
-                    Optional<Vertex> optVertex = verticesRepostiory.findById(flow.getTopVertexId());
 
                     //TODO: add default reply
                     if (!optVertex.isPresent()) {
@@ -182,8 +258,6 @@ public class ConversationHandler {
             } else {
                 //if vertex is not last vertex
                 Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "currentVertex is not last vertex");
-
-                Optional<Vertex> optVertex = verticesRepostiory.findById(conversation.getData().getCurrentVertexId());
 
                 //check if vertez is present
                 if (!optVertex.isPresent()) {
@@ -268,7 +342,8 @@ public class ConversationHandler {
 
             conversation.setIsGuest(requestBody.getIsGuest());
         }
-
+        
+         */
         Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "dispatch.getType(): " + dispatch.getType());
 
         if (null != dispatch.getVariables()) {
@@ -295,7 +370,7 @@ public class ConversationHandler {
                 String url = "";
                 if (VertexType.MENU_MESSAGE == dispatch.getType()) {
                     url = requestBody.getCallbackUrl() + "callback/menumessage/push/";
-                    messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), conversation.getIsGuest(Boolean.TRUE));
+                    messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), conversation.getIsGuest());
                     conversation.shiftVertex(dispatch.getStepId());
                     conversationsRepostiory.save(conversation);
                 }
@@ -304,16 +379,19 @@ public class ConversationHandler {
                         || VertexType.IMMEDIATE_TEXT_MESSAGE == dispatch.getType()
                         || VertexType.HANDOVER == dispatch.getType()) {
                     url = requestBody.getCallbackUrl() + "callback/textmessage/push/";
-                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, " pushMessage: " + pushMessage);
 
-                    messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), conversation.getIsGuest(Boolean.TRUE));
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "conversation: " + conversation);
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "conversation.getSenderId(): " + conversation.getSenderId());
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "conversation.getIsGuest(): " + conversation.getIsGuest());
+
+                    messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), conversation.getIsGuest());
                     conversation.shiftVertex(dispatch.getStepId());
                     conversationsRepostiory.save(conversation);
                 }
 
                 if (VertexType.HANDOVER == dispatch.getType()) {
                     url = requestBody.getCallbackUrl() + "callback/conversation/pass/";
-                    messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), conversation.getIsGuest(Boolean.TRUE));
+                    messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), conversation.getIsGuest());
                     conversation.shiftVertex(dispatch.getStepId());
                     conversationsRepostiory.save(conversation);
 
@@ -329,13 +407,67 @@ public class ConversationHandler {
         if (VertexType.ACTION == dispatch.getType()
                 || VertexType.CONDITION == dispatch.getType()
                 || VertexType.IMMEDIATE_TEXT_MESSAGE == dispatch.getType()) {
+
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "recursing through " + dispatch.getType() + " type");
+
+            Optional<Vertex> optNextVertex = verticesRepostiory.findById(dispatch.getStepId());
+
+            if (optNextVertex.isPresent()) {
+                Vertex nextVertex = optNextVertex.get();
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "nextVertexId: " + nextVertex.getId() + " nextVertexId.getIsLastVertex(): " + nextVertex.getIsLastVertex());
+                if (nextVertex.getIsLastVertex() != null && nextVertex.getIsLastVertex() == 1) {
+                    conversation.getData().setCurrentVertexId(null);
+                    conversationsRepostiory.save(conversation);
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "cleared currentVertex from conversation");
+                    return conversation;
+                }
+            }
+
             conversation.shiftVertex(dispatch.getStepId());
             conversationsRepostiory.save(conversation);
             conversation = processConversastion(conversation, requestBody);
         }
 
         return conversation;
+    }
+
+    private Optional<Vertex> getCurrentVertex(Conversation conversation) throws NotFoundException {
+
+        String logprefix = conversation.getSenderId();
+        String vertexId = null;
+
+        if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "current vertex found");
+
+            vertexId = conversation.getData().getCurrentVertexId();
+        } else {
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "latest vertex not found");
+
+            List<Flow> flows = flowsRepostiory.findByBotIds(conversation.getRefrenceId());
+
+            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flows for bot: " + flows.size());
+
+            if (flows != null && flows.isEmpty()) {
+                throw new NotFoundException();
+            }
+
+            Flow flow = flows.get(0);
+            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flow found with id: " + flow.getId());
+
+            vertexId = flow.getTopVertexId();
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "topVertexId: " + vertexId);
+            conversationsRepostiory.save(conversation);
+        }
+
+        Optional<Vertex> vertexOpt = verticesRepostiory.findById(vertexId);
+
+        if (!vertexOpt.isPresent()) {
+            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertexId);
+            throw new NotFoundException();
+        } else {
+            return vertexOpt;
+        }
+
     }
 
     private void sendDefaultMessage(Conversation conversation, String callBackUrl) throws Exception {
@@ -349,8 +481,10 @@ public class ConversationHandler {
         pushMessage.setRecipientIds(recipients);
         pushMessage.setReferenceId(conversation.getRefrenceId());
         String url = callBackUrl + "callback/textmessage/push/";
-        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, " sending  default pushMessage: " + pushMessage);
-        messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), conversation.getIsGuest(Boolean.TRUE));
+        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, " essembled  default pushMessage: " + pushMessage);
+        messageSender.sendMessage(pushMessage, url, conversation.getSenderId(), conversation.getIsGuest());
+        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, " sent  default pushMessage: " + pushMessage);
+
     }
 
 }

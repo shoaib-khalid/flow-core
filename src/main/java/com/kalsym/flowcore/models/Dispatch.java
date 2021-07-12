@@ -24,6 +24,8 @@ public class Dispatch {
     Vertex vertex;
     private String referenceId;
 
+    private Integer isLastVertex;
+
     public Dispatch() {
     }
 
@@ -32,6 +34,7 @@ public class Dispatch {
         this.type = vertex.getInfo().getType();
         this.vertex = vertex;
         this.referenceId = referenceId;
+        this.isLastVertex = vertex.getIsLastVertex();
         pushMessage = vertex.getPushMessage(data, refId);
     }
 

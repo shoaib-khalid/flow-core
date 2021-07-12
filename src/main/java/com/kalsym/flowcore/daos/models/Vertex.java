@@ -49,8 +49,8 @@ public class Vertex {
     private Date lastModifiedDate;
 
     private String flowId;
-    
-    
+
+    private Integer isTopVertex;
     private Integer isLastVertex;
 
     /**
@@ -177,7 +177,6 @@ public class Vertex {
      * @return PushMessage
      */
     public PushMessage getPushMessage(Data data, String refId) {
-
 
         PushMessage pushMessage = new PushMessage();
 

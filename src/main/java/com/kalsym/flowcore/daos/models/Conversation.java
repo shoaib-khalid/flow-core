@@ -80,7 +80,7 @@ public class Conversation {
         data.setIsGuest(isGuest);
     }
 
-    public Boolean getIsGuest(Boolean isGuest) {
+    public Boolean getIsGuest() {
         if (null == this.data) {
             this.data = new Data();
             return false;

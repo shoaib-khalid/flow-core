@@ -2,6 +2,7 @@ package com.kalsym.flowcore.controllers;
 
 import com.kalsym.flowcore.VersionHolder;
 import com.kalsym.flowcore.daos.models.*;
+import com.kalsym.flowcore.daos.repositories.ConversationsRepostiory;
 import com.kalsym.flowcore.models.*;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,8 @@ import com.kalsym.flowcore.services.ConversationHandler;
 import com.kalsym.flowcore.utils.Logger;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Date;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  *
@@ -27,6 +30,11 @@ public class InboundController {
 
     @Autowired
     private ConversationHandler conversationHandler;
+    
+    @Autowired
+    private ConversationsRepostiory conversationsRepostiory;
+
+
 
     /**
      * Postback receives id targetId in the payload as data.
@@ -55,7 +63,11 @@ public class InboundController {
 
         try {
             conversation = conversationHandler.getConversation(senderId, refrenceId);
+
+            
+
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "conversationId: " + conversation.getId());
+
         } catch (Exception e) {
             Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "Error retrieving conversation", e);
             response.setSuccessStatus(HttpStatus.OK, e.getMessage());
