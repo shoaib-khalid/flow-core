@@ -236,18 +236,18 @@ public class ConversationHandler {
                     HttpHeaders headers = new HttpHeaders();
                     headers.add("Authorization", "Bearer accessToken");
                     HttpEntity getAssetsRequestBody = new HttpEntity(headers);
-                    ResponseEntity<String> getAssetsResponse = getStoreDetailsRequest.exchange(STORE_ASSET_URL, HttpMethod.GET, getAssetsRequestBody, String.class);
-
-                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "data response  : ", getAssetsResponse.getBody().toString());
-
 
                     try{
+                        ResponseEntity<String> getAssetsResponse = getStoreDetailsRequest.exchange(STORE_ASSET_URL, HttpMethod.GET, getAssetsRequestBody, String.class);
+                        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "data response  : ", getAssetsResponse.getBody().toString());
+
                         JSONObject assetData = new JSONObject(getAssetsResponse.getBody()).getJSONObject("data");
                         //set logo url
                         conversation.setVariableValue("logoUrl", assetData.getString("logoUrl"));
 
                         Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "data : ", assetData);
-                    }catch (JSONException e){
+                    }catch (Exception e){
+                        Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, "COULD NOT FETCH STORE ASSETS", "SETTING DEFAULT ASSET VALUES");
                         conversation.setVariableValue("logoUrl", "https://www.techopedia.com/images/uploads/6e13a6b3-28b6-454a-bef3-92d3d5529007.jpeg");
                     }finally {
                         conversation.setVariableValue("urlType", "IMAGE");
