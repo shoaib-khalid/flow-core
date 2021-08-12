@@ -201,6 +201,11 @@ public class ConversationHandler {
                     return conversation;
                 }
                 vertex = optVertex.get();
+                if (vertex.getIsLastVertex() != null && vertex.getIsLastVertex() == 1) {
+                    conversation.getData().setCurrentVertexId(null);
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "cleared currentVertex from conversation");
+                    return processConversastion(conversation, requestBody);
+                }
                 dispatch = verticesHandler.processVertex(conversation, vertex, inputData);
             } else {
                 //new conversation
