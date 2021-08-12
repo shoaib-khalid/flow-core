@@ -243,12 +243,7 @@ public class ConversationHandler {
 
                     Flow flow = optFlow.get();
 
-                    //TODO: add default reply
-                    if (!optVertex.isPresent()) {
-                        Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "top vertex not found with Id: " + flow.getTopVertexId());
-                        sendDefaultMessage(conversation, requestBody.getCallbackUrl());
-                        return conversation;
-                    }
+
                     vertex = optVertex.get();
                     Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flow topVertexId: " + flow.getTopVertexId());
 

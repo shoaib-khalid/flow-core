@@ -135,7 +135,7 @@ public class VerticesHandler {
      *
      * @param conversation
      * @param vertex
-     * @param text
+     * @param inputData
      * @return Step
      */
     private Dispatch getStepByHandover(Conversation conversation, Vertex vertex, String inputData) {
@@ -166,6 +166,7 @@ public class VerticesHandler {
             Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
             dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         } else {
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "Next Vertex Id: " + vertex.getStep().getTargetId());
             Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
             dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         }
