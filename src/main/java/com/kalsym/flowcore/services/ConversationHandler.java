@@ -18,6 +18,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import io.swagger.models.Response;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
@@ -25,7 +29,12 @@ import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.ExampleMatcher.StringMatcher;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Handles conversation based on sender and refrenceId.
@@ -116,6 +125,9 @@ public class ConversationHandler {
 
         newConversation.setSenderId(senderId);
         newConversation.setRefrenceId(refrenceId);
+
+
+
         //newConversation.setFlowId(refrenceId);
         Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "created conversation");
 
@@ -177,6 +189,7 @@ public class ConversationHandler {
         Vertex vertex = null;
         Dispatch dispatch = null;
 
+
         try {
 
             if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
@@ -198,6 +211,47 @@ public class ConversationHandler {
                     return conversation;
                 }
                 vertex = optVertex.get();
+
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "vertex info : ", vertex.toString());
+
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "flow ID : ", vertex.getFlowId());
+
+                Optional<Flow> optionalFlow = flowsRepostiory.findById(vertex.getFlowId());
+                if(optionalFlow.isPresent()){
+                    Flow testFlow = optionalFlow.get();
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "flow details : ", testFlow.toString());
+
+                    String storeId = testFlow.storeId;
+
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "Store id : ", storeId);
+                    String STORE_ASSET_URL = "http://209.58.160.20:8001/stores/"+storeId+"/assets";
+                    RestTemplate getStoreDetailsRequest = new RestTemplate();
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.add("Authorization", "Bearer accessToken");
+                    HttpEntity getAssetsRequestBody = new HttpEntity(headers);
+                    ResponseEntity<String> getAssetsResponse = getStoreDetailsRequest.exchange(STORE_ASSET_URL, HttpMethod.GET, getAssetsRequestBody, String.class);
+
+                    Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "data response  : ", getAssetsResponse.getBody().toString());
+
+
+                    try{
+                        JSONObject assetData = new JSONObject(getAssetsResponse.getBody()).getJSONObject("data");
+                        //set logo url
+                        conversation.setVariableValue("logoUrl", assetData.getString("logoUrl"));
+
+                        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "data : ", assetData);
+                    }catch (JSONException e){
+                        conversation.setVariableValue("logoUrl", "https://www.techopedia.com/images/uploads/6e13a6b3-28b6-454a-bef3-92d3d5529007.jpeg");
+                    }finally {
+                        conversation.setVariableValue("urlType", "IMAGE");
+                    }
+
+
+
+                }
+
+
+
                 dispatch = new Dispatch(vertex, conversation.getData(), logprefix, conversation.getRefrenceId());
 
             }
@@ -439,6 +493,7 @@ public class ConversationHandler {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "latest vertex not found");
 
             List<Flow> flows = flowsRepostiory.findByBotIds(conversation.getRefrenceId());
+            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "bot: " +conversation.getRefrenceId());
 
             Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flows for bot: " + flows.size());
 

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -23,6 +24,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Getter
 @Setter
 @Document
+@ToString
 public class Vertex {
 
     @Id
@@ -172,7 +174,6 @@ public class Vertex {
      * Generates push message for the vertex.
      *
      * @param data
-     * @param recipients
      * @param refId
      * @return PushMessage
      */
@@ -233,8 +234,8 @@ public class Vertex {
             }
         }
 
-        pushMessage.setUrl("https://www.techopedia.com/images/uploads/6e13a6b3-28b6-454a-bef3-92d3d5529007.jpeg");
-        pushMessage.setUrlType("IMAGE");
+        pushMessage.setUrl(data.getVariableValue("urlType"));
+        pushMessage.setUrlType(data.getVariableValue("urlType"));
 
         //pushMessage.setRecipientIds(recipients);
         pushMessage.setRefId(refId);

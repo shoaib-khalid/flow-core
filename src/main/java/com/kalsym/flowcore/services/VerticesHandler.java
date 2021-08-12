@@ -154,19 +154,22 @@ public class VerticesHandler {
 //        }
 
         if (HandoverAction.LIVECHATSESSIONTAKEN.toString().equals(event.toUpperCase())) {
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "in if : Next Vertex Id: " + vertex.getStep().getTargetId());
             vertex.getInfo().setText(vertex.getHandover().getConnectMessage());
             dispatch = new Dispatch(vertex, conversation.getData(), logprefix, conversation.getRefrenceId());
             dispatch.setVariableValue("csrName", csrName);
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "csrName: " + csrName);
 
         } else if (HandoverAction.FORWARDED.toString().equals(event.toUpperCase())) {
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "in else 1 : Next Vertex Id: " + vertex.getStep().getTargetId());
             vertex.getInfo().setText(vertex.getHandover().getForwardMessage());
             dispatch = new Dispatch(vertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         } else if (HandoverAction.LIVECHATSESSION.toString().equals(event.toUpperCase())) {
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "in else if 2 : Next Vertex Id: " + vertex.getStep().getTargetId());
             Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
             dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         } else {
-            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "Next Vertex Id: " + vertex.getStep().getTargetId());
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "in else : Next Vertex Id: " + vertex.toString());
             Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
             dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         }
