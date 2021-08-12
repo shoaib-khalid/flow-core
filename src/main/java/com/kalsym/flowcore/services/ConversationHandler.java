@@ -65,6 +65,8 @@ public class ConversationHandler {
     @Value("${conversation.expiry:3600}")
     int conversationExpiry;
 
+    @Value("${product.service.url:https://api.symplified.biz/product-service/v1/}")
+    String PRODUCT_SERVICE_URL;
     /**
      * Return conversation of sender.If conversation does not exist returns a
      * new conversation.
@@ -229,7 +231,7 @@ public class ConversationHandler {
                     String storeId = testFlow.storeId;
 
                     Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, "Store id : ", storeId);
-                    String STORE_ASSET_URL = "http://209.58.160.20:8001/stores/"+storeId+"/assets";
+                    String STORE_ASSET_URL = PRODUCT_SERVICE_URL+"stores/"+storeId+"/assets";
                     RestTemplate getStoreDetailsRequest = new RestTemplate();
                     HttpHeaders headers = new HttpHeaders();
                     headers.add("Authorization", "Bearer accessToken");
