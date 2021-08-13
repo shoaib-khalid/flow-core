@@ -234,7 +234,7 @@ public class Vertex {
             }
         }
 
-        pushMessage.setUrl(data.getVariableValue("urlType"));
+        pushMessage.setUrl(data.getVariableValue("logoUrl"));
         pushMessage.setUrlType(data.getVariableValue("urlType"));
 
         //pushMessage.setRecipientIds(recipients);

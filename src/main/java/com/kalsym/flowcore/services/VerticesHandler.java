@@ -120,7 +120,7 @@ public class VerticesHandler {
                 return dispatch;
             }
         } catch (Exception e) {
-            Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "validation exception " + text, e);
+            Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "validation exception " + text, e.getMessage());
             Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
             dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
             dispatch.setVariableValue(vertex.getDataVariable(), text);
