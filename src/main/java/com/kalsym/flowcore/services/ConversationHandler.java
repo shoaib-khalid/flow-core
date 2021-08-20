@@ -494,9 +494,9 @@ public class ConversationHandler {
 
         if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "current vertex found");
-
             vertexId = conversation.getData().getCurrentVertexId();
-        } else {
+        }
+        else {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "latest vertex not found");
 
             List<Flow> flows = flowsRepostiory.findByBotIds(conversation.getRefrenceId());
@@ -520,6 +520,8 @@ public class ConversationHandler {
 
         if (!vertexOpt.isPresent()) {
             Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertexId);
+//            sendDefaultMessage(conversation,);
+//            conversationsRepostiory.delete(conversation);
             throw new NotFoundException();
         } else {
             return vertexOpt;
