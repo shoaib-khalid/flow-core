@@ -63,13 +63,20 @@ public class ExternalRequest {
                 Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "erHeaders: " + erHeaders);
 
                 for (ExternalRequestHeader header : erHeaders) {
-                    httpHeaders.add(header.getName(), header.getValue());
+                    if(null != header.getName())
+                        httpHeaders.add(header.getName(), header.getValue());
                 }
             }
 
             ExternalRequestBody erBody = this.body;
             HttpEntity<String> requestEntity = null;
-            if (DataFomat.JSON == erBody.getFormat()) {
+            if(null == erBody.getFormat()){
+                erBody.setFormat(DataFomat.JSON);
+                Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "Set default format to JSON ");
+            }
+            if (DataFomat.JSON == erBody.getFormat() &&
+                    (HttpMethod.POST == this.httpMethod || HttpMethod.PUT == this.httpMethod)
+            ) {
                 String payload = erBody.getPayload();
                 httpHeaders.setContentType(MediaType.APPLICATION_JSON);
                 Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "payload: " + payload);
