@@ -520,12 +520,13 @@ public class ConversationHandler {
 
             vertexId = flow.getTopVertexId();
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "topVertexId: " + vertexId);
+            conversation.setFlowId(flow.getId());
             conversationsRepostiory.save(conversation);
         }
 
-        if(flow == null){
-            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flow :  "+ flow);
-        }
+//        if(flow == null){
+//            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flow :  "+ flow);
+//        }
 
         Optional<Vertex> vertexOpt = verticesRepostiory.findByFlowIdAndMxGraphId(flow.getId(), vertexId);
 
