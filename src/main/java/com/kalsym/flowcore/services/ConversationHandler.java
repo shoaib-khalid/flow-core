@@ -496,6 +496,7 @@ public class ConversationHandler {
         Flow flow = null;
         if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "current vertex found");
+            Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "current vertex id: "+ conversation.getData().getCurrentVertexId());
             Vertex optionalVertex = verticesRepostiory.findById(conversation.getData().getCurrentVertexId()).get();
             flow = flowsRepostiory.findById(optionalVertex.getFlowId()).get();
             vertexId = optionalVertex.getMxGraphId();
