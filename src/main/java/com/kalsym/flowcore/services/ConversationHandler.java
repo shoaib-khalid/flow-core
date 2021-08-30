@@ -193,8 +193,7 @@ public class ConversationHandler {
 
 
         try {
-
-            if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
+            if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId() ) {
                 //existing conversation
                 Optional<Vertex> optVertex = getCurrentVertex(conversation);
                 if (!optVertex.isPresent()) {
@@ -492,9 +491,16 @@ public class ConversationHandler {
         String logprefix = conversation.getSenderId();
         String vertexId = null;
 
+        Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "Converstation details : "+ new JSONObject(conversation).toString());
+
+        Flow flow = null;
         if (null != conversation.getData() && null != conversation.getData().getCurrentVertexId()) {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "current vertex found");
-            vertexId = conversation.getData().getCurrentVertexId();
+            Vertex optionalVertex = verticesRepostiory.findById(conversation.getData().getCurrentVertexId()).get();
+            flow = flowsRepostiory.findById(optionalVertex.getFlowId()).get();
+            vertexId = optionalVertex.getMxGraphId();
+
+//                    conversation.getData().getCurrentVertexId();
         }
         else {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "latest vertex not found");
@@ -504,11 +510,11 @@ public class ConversationHandler {
 
             Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flows for bot: " + flows.size());
 
-            if (flows != null && flows.isEmpty()) {
+            if (flows.isEmpty()) {
                 throw new NotFoundException();
             }
 
-            Flow flow = flows.get(0);
+            flow = flows.get(0);
             Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flow found with id: " + flow.getId());
 
             vertexId = flow.getTopVertexId();
@@ -516,7 +522,14 @@ public class ConversationHandler {
             conversationsRepostiory.save(conversation);
         }
 
-        Optional<Vertex> vertexOpt = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), vertexId);
+        if(flow == null){
+            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "flow :  "+ flow);
+        }
+
+        Optional<Vertex> vertexOpt = verticesRepostiory.findByFlowIdAndMxGraphId(flow.getId(), vertexId);
+
+        Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertexOpt : " + vertexOpt);
+
 
         if (!vertexOpt.isPresent()) {
             Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertexId);

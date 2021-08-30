@@ -23,7 +23,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
  */
 @Getter
 @Setter
-@Document
+@Document(collection = "vertex")
 @ToString
 public class Vertex {
 
@@ -51,6 +51,7 @@ public class Vertex {
     private Date lastModifiedDate;
 
     private String flowId;
+    private String mxGraphId;
 
     private Integer isTopVertex;
     private Integer isLastVertex;

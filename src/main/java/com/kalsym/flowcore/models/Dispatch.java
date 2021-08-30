@@ -30,7 +30,7 @@ public class Dispatch {
     }
 
     public Dispatch(Vertex vertex, Data data, String refId, String referenceId) {
-        this.stepId = vertex.getId();
+        this.stepId = vertex.getMxGraphId();
         this.type = vertex.getInfo().getType();
         this.vertex = vertex;
         this.referenceId = referenceId;
