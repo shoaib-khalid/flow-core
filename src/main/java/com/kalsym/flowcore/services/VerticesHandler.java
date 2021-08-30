@@ -8,6 +8,7 @@ import com.kalsym.flowcore.daos.repositories.VerticesRepostiory;
 import com.kalsym.flowcore.models.enums.*;
 import com.kalsym.flowcore.utils.Logger;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONObject;
@@ -57,7 +58,12 @@ public class VerticesHandler {
 
         if (VertexType.IMMEDIATE_TEXT_MESSAGE == vertex.getInfo().getType()) {
             Step step = vertex.getStep();
-            nextVertex = verticesRepostiory.findById(step.getTargetId()).get();
+            //todo: changing to findByMxGraphId
+            Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), step.getTargetId());
+            if(optionalVertex.isPresent()){
+                nextVertex = optionalVertex.get();
+            }else
+                return null;
             dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         }
         if (VertexType.HANDOVER == vertex.getInfo().getType()) {
@@ -74,7 +80,14 @@ public class VerticesHandler {
 
         if (VertexType.CONDITION == vertex.getInfo().getType()) {
             Step step = vertex.matchConditions(conversation.getData());
-            nextVertex = verticesRepostiory.findById(step.getTargetId()).get();
+            Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), step.getTargetId());
+            if(optionalVertex.isPresent()){
+                nextVertex = optionalVertex.get();
+            }else
+            {
+                Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + step.getTargetId());
+                return null;
+            }
             dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         }
 
@@ -107,8 +120,15 @@ public class VerticesHandler {
             if (m.matches()) {
                 Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "validation success for data: " + text);
 
-                Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
-
+                Vertex nextVertex;
+                Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+                if(optionalVertex.isPresent()){
+                    nextVertex = optionalVertex.get();
+                }else
+                {
+                    Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertex.getStep().getTargetId());
+                    return null;
+                }
                 dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
                 dispatch.setVariableValue(vertex.getDataVariable(), text);
                 Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "variable added " + vertex.getDataVariable() + ": " + text);
@@ -121,7 +141,15 @@ public class VerticesHandler {
             }
         } catch (Exception e) {
             Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "validation exception " + text, e.getMessage());
-            Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
+            Vertex nextVertex ;
+            Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+            if(optionalVertex.isPresent()){
+                nextVertex = optionalVertex.get();
+            }else
+            {
+                Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertex.getStep().getTargetId());
+                return null;
+            }
             dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
             dispatch.setVariableValue(vertex.getDataVariable(), text);
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "variable added " + vertex.getDataVariable() + ": " + text);
@@ -166,11 +194,27 @@ public class VerticesHandler {
             dispatch = new Dispatch(vertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         } else if (HandoverAction.LIVECHATSESSION.toString().equals(event.toUpperCase())) {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "in else if 2 : Next Vertex Id: " + vertex.getStep().getTargetId());
-            Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
+            Vertex nextVertex;
+            Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+            if(optionalVertex.isPresent()){
+                nextVertex = optionalVertex.get();
+            }else
+            {
+                Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertex.getStep().getTargetId());
+                return null;
+            }
             dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         } else {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "in else : Next Vertex Id: " + vertex.toString());
-            Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
+            Vertex nextVertex;
+            Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+            if(optionalVertex.isPresent()){
+                nextVertex = optionalVertex.get();
+            }else
+            {
+                Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertex.getStep().getTargetId());
+                return null;
+            }
             dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         }
         return dispatch;
@@ -200,7 +244,15 @@ public class VerticesHandler {
             }
 
             if (null != tempDispatch.getStepId()) {
-                Vertex nextVertex = verticesRepostiory.findById(tempDispatch.getStepId()).get();
+                Vertex nextVertex;
+                Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), tempDispatch.getStepId());
+                if(optionalVertex.isPresent()){
+                    nextVertex = optionalVertex.get();
+                }else
+                {
+                    Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + tempDispatch.getStepId());
+                    return null;
+                }
                 tempDispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
                 Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "error processing action: " + action.getType());
                 Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "errorStepTargetId: " + tempDispatch.getStepId());
@@ -214,7 +266,16 @@ public class VerticesHandler {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "no error assigning next step: " + step.getTargetId());
         }
 
-        Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
+        Vertex nextVertex ;
+        Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+        if(optionalVertex.isPresent()){
+            nextVertex = optionalVertex.get();
+        }else
+        {
+            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertex.getStep().getTargetId());
+            return null;
+        }
+
         Dispatch dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         dispatch.setVariables(tempDispatch.getVariables());
         return dispatch;
@@ -224,7 +285,15 @@ public class VerticesHandler {
         String logprefix = conversation.getSenderId();
         Dispatch dispatch = null;
 
-        Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
+        Vertex nextVertex ;
+        Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+        if(optionalVertex.isPresent()){
+            nextVertex = optionalVertex.get();
+        }else
+        {
+            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertex.getStep().getTargetId());
+            return null;
+        }
         dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         dispatch.setVariableValue(vertex.getDataVariable(), value);
         Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "variable added " + vertex.getDataVariable() + ": " + value);
@@ -246,7 +315,15 @@ public class VerticesHandler {
 
         if (null != option) {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "matched " + value + ": " + option.getText());
-            Vertex nextVertex = verticesRepostiory.findById(option.getStep().getTargetId()).get();
+            Vertex nextVertex;
+            Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), option.getStep().getTargetId());
+            if(optionalVertex.isPresent()){
+                nextVertex = optionalVertex.get();
+            }else
+            {
+                Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + option.getStep().getTargetId());
+                return null;
+            }
             Dispatch dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
 
             String variableValue = option.getText();
@@ -266,7 +343,15 @@ public class VerticesHandler {
             return dispatch;
         }
         Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "no value matched");
-        Vertex nextVertex = verticesRepostiory.findById(vertex.getStep().getTargetId()).get();
+        Vertex nextVertex;
+        Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+        if(optionalVertex.isPresent()){
+            nextVertex = optionalVertex.get();
+        }else
+        {
+            Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertex.getStep().getTargetId());
+            return null;
+        }
         Dispatch dispatch = new Dispatch(nextVertex, conversation.getData(), logprefix, conversation.getRefrenceId());
         return dispatch;
     }
