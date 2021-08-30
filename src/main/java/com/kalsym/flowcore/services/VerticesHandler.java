@@ -59,7 +59,7 @@ public class VerticesHandler {
         if (VertexType.IMMEDIATE_TEXT_MESSAGE == vertex.getInfo().getType()) {
             Step step = vertex.getStep();
             //todo: changing to findByMxGraphId
-            Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), step.getTargetId());
+            Optional<Vertex> optionalVertex = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), step.getTargetId());
             if(optionalVertex.isPresent()){
                 nextVertex = optionalVertex.get();
             }else
@@ -80,7 +80,7 @@ public class VerticesHandler {
 
         if (VertexType.CONDITION == vertex.getInfo().getType()) {
             Step step = vertex.matchConditions(conversation.getData());
-            Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), step.getTargetId());
+            Optional<Vertex> optionalVertex = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), step.getTargetId());
             if(optionalVertex.isPresent()){
                 nextVertex = optionalVertex.get();
             }else
@@ -121,7 +121,7 @@ public class VerticesHandler {
                 Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "validation success for data: " + text);
 
                 Vertex nextVertex;
-                Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+                Optional<Vertex> optionalVertex = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
                 if(optionalVertex.isPresent()){
                     nextVertex = optionalVertex.get();
                 }else
@@ -142,7 +142,7 @@ public class VerticesHandler {
         } catch (Exception e) {
             Logger.application.error("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "validation exception " + text, e.getMessage());
             Vertex nextVertex ;
-            Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+            Optional<Vertex> optionalVertex = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
             if(optionalVertex.isPresent()){
                 nextVertex = optionalVertex.get();
             }else
@@ -195,7 +195,7 @@ public class VerticesHandler {
         } else if (HandoverAction.LIVECHATSESSION.toString().equals(event.toUpperCase())) {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "in else if 2 : Next Vertex Id: " + vertex.getStep().getTargetId());
             Vertex nextVertex;
-            Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+            Optional<Vertex> optionalVertex = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
             if(optionalVertex.isPresent()){
                 nextVertex = optionalVertex.get();
             }else
@@ -207,7 +207,7 @@ public class VerticesHandler {
         } else {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "in else : Next Vertex Id: " + vertex.toString());
             Vertex nextVertex;
-            Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+            Optional<Vertex> optionalVertex = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
             if(optionalVertex.isPresent()){
                 nextVertex = optionalVertex.get();
             }else
@@ -245,7 +245,7 @@ public class VerticesHandler {
 
             if (null != tempDispatch.getStepId()) {
                 Vertex nextVertex;
-                Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), tempDispatch.getStepId());
+                Optional<Vertex> optionalVertex = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), tempDispatch.getStepId());
                 if(optionalVertex.isPresent()){
                     nextVertex = optionalVertex.get();
                 }else
@@ -267,7 +267,7 @@ public class VerticesHandler {
         }
 
         Vertex nextVertex ;
-        Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+        Optional<Vertex> optionalVertex = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
         if(optionalVertex.isPresent()){
             nextVertex = optionalVertex.get();
         }else
@@ -286,7 +286,7 @@ public class VerticesHandler {
         Dispatch dispatch = null;
 
         Vertex nextVertex ;
-        Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+        Optional<Vertex> optionalVertex = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
         if(optionalVertex.isPresent()){
             nextVertex = optionalVertex.get();
         }else
@@ -316,7 +316,7 @@ public class VerticesHandler {
         if (null != option) {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "matched " + value + ": " + option.getText());
             Vertex nextVertex;
-            Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), option.getStep().getTargetId());
+            Optional<Vertex> optionalVertex = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), option.getStep().getTargetId());
             if(optionalVertex.isPresent()){
                 nextVertex = optionalVertex.get();
             }else
@@ -344,7 +344,7 @@ public class VerticesHandler {
         }
         Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "no value matched");
         Vertex nextVertex;
-        Optional<Vertex> optionalVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
+        Optional<Vertex> optionalVertex = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), vertex.getStep().getTargetId());
         if(optionalVertex.isPresent()){
             nextVertex = optionalVertex.get();
         }else

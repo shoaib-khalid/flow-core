@@ -13,7 +13,7 @@ import java.util.Optional;
  */
 public interface VerticesRepostiory extends MongoRepository<Vertex, String> {
 
-    @Query(value = "{'flowId' : ?0, 'mxGraphId' : ?1}")
-    public Optional<Vertex> findByMxGraphId(String flowId, String mxGraphId);
+    //@Query(value = "{'flowId' : ?0, 'mxGraphId' : ?1}")
+    public Optional<Vertex> findByFlowIdAndMxGraphId(String flowId, String mxGraphId);
 
 }

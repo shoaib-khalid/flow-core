@@ -165,7 +165,7 @@ public class ConversationHandler {
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "updated currentVertexId: " + vertexId);
         }
 
-        Optional<Vertex> vertexOpt = verticesRepostiory.findByMxGraphId(conversation.getFlowId(),vertexId);
+        Optional<Vertex> vertexOpt = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(),vertexId);
 
         if (!vertexOpt.isPresent()) {
             Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertexId);
@@ -466,7 +466,7 @@ public class ConversationHandler {
 
             Logger.application.info("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "recursing through " + dispatch.getType() + " type");
 
-            Optional<Vertex> optNextVertex = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), dispatch.getStepId());
+            Optional<Vertex> optNextVertex = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), dispatch.getStepId());
 
             if (optNextVertex.isPresent()) {
                 Vertex nextVertex = optNextVertex.get();
@@ -516,7 +516,7 @@ public class ConversationHandler {
             conversationsRepostiory.save(conversation);
         }
 
-        Optional<Vertex> vertexOpt = verticesRepostiory.findByMxGraphId(conversation.getFlowId(), vertexId);
+        Optional<Vertex> vertexOpt = verticesRepostiory.findByFlowIdAndMxGraphId(conversation.getFlowId(), vertexId);
 
         if (!vertexOpt.isPresent()) {
             Logger.application.warn("[v{}][{}] {}", VersionHolder.VERSION, logprefix, "vertex not found with id: " + vertexId);
